@@ -29,6 +29,13 @@ Es eignet sich fuer einzelne Webseiten ebenso wie fuer Netzwerke, in denen Suppo
 * E-Mail-Benachrichtigungen bei Ticket-Aktivitaeten
 * Integration mit PS Bloghosting / Pro Sites
 * CRM-Agenten-Auswahl ueber SmartCRM-Tabellen, wenn vorhanden
+* SLA-Ampel: farbliche Hervorhebung ueberfaelliger Tickets in der Admin-Liste
+* "Warte seit"-Spalte zeigt Wartezeit pro Ticket
+* Interne Notizen: Antworten nur fuer Mitarbeiter sichtbar markieren
+* Eigene Queue: Dashboard-Karte fuer zugewiesene Tickets die auf Admin-Antwort warten
+* Feinere Berechtigungen: separate Caps fuer Antworten, Zuweisen, Schliessen, Labels, Loeschen
+* Ticket-Labels: farbige Tags zur freien Kategorisierung
+* Antwort-Templates: vordefinierte Textbausteine fuer haeufige Antworten
 
 == Settings ==
 
