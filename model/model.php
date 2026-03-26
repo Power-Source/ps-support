@@ -22,6 +22,8 @@ if ( ! class_exists( 'MU_Support_System_Model' ) ) {
 		public $faq_cats_table;
 		public $tickets_table;
 		public $tickets_cats_table;
+		public $labels_table;
+		public $ticket_labels_table;
 
 		/**
 		 * Database charset and collate
@@ -55,6 +57,8 @@ if ( ! class_exists( 'MU_Support_System_Model' ) ) {
 			$this->ticketmeta 				= $wpdb->base_prefix . 'support_ticketmeta';
 			$this->tickets_messages_table 	= $wpdb->base_prefix . 'support_tickets_messages';
 			$this->tickets_cats_table 		= $wpdb->base_prefix . 'support_tickets_cats';
+			$this->labels_table 			= $wpdb->base_prefix . 'support_labels';
+			$this->ticket_labels_table 		= $wpdb->base_prefix . 'support_ticket_labels';
 
 			$wpdb->support_ticketmeta = $this->ticketmeta;
 
@@ -80,6 +84,8 @@ if ( ! class_exists( 'MU_Support_System_Model' ) ) {
 			$this->create_ticketmeta_table();
 			$this->create_tickets_messages_table();
 			$this->create_tickets_cats_table();
+			$this->create_labels_table();
+			$this->create_ticket_labels_table();
 		}
 
 		
@@ -213,6 +219,7 @@ if ( ! class_exists( 'MU_Support_System_Model' ) ) {
 				subject varchar(255) character set utf8 NOT NULL,
 				message mediumtext character set utf8 NOT NULL,
 				attachments text NOT NULL,
+				is_internal tinyint(1) NOT NULL DEFAULT '0',
 				PRIMARY KEY  (message_id),
 				KEY ticket_id (ticket_id)
 			      ) $this->db_charset_collate;";
@@ -256,12 +263,38 @@ if ( ! class_exists( 'MU_Support_System_Model' ) ) {
 			$wpdb->query( "DROP TABLE $this->ticketmeta" );
 			$wpdb->query( "DROP TABLE $this->tickets_messages_table" );
 			$wpdb->query( "DROP TABLE $this->tickets_cats_table" );
+			$wpdb->query( "DROP TABLE IF EXISTS $this->labels_table" );
+			$wpdb->query( "DROP TABLE IF EXISTS $this->ticket_labels_table" );
 
 		}
 
 		public function upgrade_1981() {
 			require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 			$this->create_faq_cats_table();
+		}
+
+		public function create_labels_table() {
+			global $wpdb;
+			$sql = "CREATE TABLE $this->labels_table (
+				label_id bigint(20) unsigned NOT NULL auto_increment,
+				site_id bigint(20) unsigned NOT NULL DEFAULT '1',
+				label_name varchar(80) character set utf8 NOT NULL,
+				label_color varchar(7) NOT NULL DEFAULT '#607d8b',
+				PRIMARY KEY  (label_id),
+				KEY site_id (site_id),
+				UNIQUE KEY label_name (label_name)
+			      ) $this->db_charset_collate;";
+			dbDelta( $sql );
+		}
+
+		public function create_ticket_labels_table() {
+			global $wpdb;
+			$sql = "CREATE TABLE $this->ticket_labels_table (
+				ticket_id bigint(20) unsigned NOT NULL,
+				label_id bigint(20) unsigned NOT NULL,
+				PRIMARY KEY  (ticket_id, label_id)
+			      ) $this->db_charset_collate;";
+			dbDelta( $sql );
 		}
 
 		public function upgrade_198() {

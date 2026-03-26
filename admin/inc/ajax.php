@@ -3,6 +3,7 @@
 class PSource_Support_Admin_Ajax {
 	public function __construct() {
 		add_action( 'wp_ajax_vote_faq_question', array( $this, 'vote_faq_question' ) );
+		add_action( 'wp_ajax_psource_support_get_reply_template', array( $this, 'get_reply_template' ) );
 	}
 
 	/**
@@ -32,6 +33,30 @@ class PSource_Support_Admin_Ajax {
 		}
 
 		wp_send_json_success();
+	}
+
+	public function get_reply_template() {
+		if ( ! check_ajax_referer( 'psource-support-reply-template', 'nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Ungültige Anfrage.', 'psource-support' ) ), 403 );
+		}
+
+		if ( ! psource_support_current_user_can( 'insert_reply' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Nicht ausreichend Berechtigungen.', 'psource-support' ) ), 403 );
+		}
+
+		$template_id = isset( $_POST['template_id'] ) ? absint( wp_unslash( $_POST['template_id'] ) ) : 0;
+		$template    = psource_support_get_reply_template( $template_id );
+
+		if ( empty( $template ) ) {
+			wp_send_json_error( array( 'message' => __( 'Template nicht gefunden.', 'psource-support' ) ), 404 );
+		}
+
+		wp_send_json_success(
+			array(
+				'content' => isset( $template['content'] ) ? $template['content'] : '',
+				'title'   => isset( $template['title'] ) ? $template['title'] : '',
+			)
+		);
 	}
 }
 

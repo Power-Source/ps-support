@@ -62,6 +62,36 @@
 
 	</table>
 
+	<h3><?php _e( 'Mitarbeiter-Berechtigungen', 'psource-support' ); ?></h3>
+	<p class="description"><?php _e( 'Lege pro Aktion fest, welche Rollen als Staff gelten und die Aktion ausführen dürfen. Super-Admins können immer alles.', 'psource-support' ); ?></p>
+	<table class="form-table">
+
+		<?php ob_start(); ?>
+			<?php foreach ( $roles as $key => $value ): if( $key == 'support-guest' ) continue; ?>
+				<label for="staff_role_<?php echo $key; ?>">
+					<input type="checkbox" value="<?php echo $key; ?>" id="staff_role_<?php echo $key; ?>" name="staff_roles[]" <?php checked( in_array( $key, $staff_roles ) ); ?> /> <?php echo $value; ?><br/>
+				</label>
+			<?php endforeach; ?>
+		<?php $this->render_row( __( 'Mitarbeiter-Rollen (Antworten, Zuweisen, Bearbeiten, Labels)', 'psource-support' ), ob_get_clean() ); ?>
+
+		<?php ob_start(); ?>
+			<?php foreach ( $roles as $key => $value ): if( $key == 'support-guest' ) continue; ?>
+				<label for="close_ticket_role_<?php echo $key; ?>">
+					<input type="checkbox" value="<?php echo $key; ?>" id="close_ticket_role_<?php echo $key; ?>" name="close_ticket_roles[]" <?php checked( in_array( $key, $close_ticket_roles ) ); ?> /> <?php echo $value; ?><br/>
+				</label>
+			<?php endforeach; ?>
+		<?php $this->render_row( __( 'Rollen, die Tickets schließen/öffnen dürfen', 'psource-support' ), ob_get_clean() ); ?>
+
+		<?php ob_start(); ?>
+			<?php foreach ( $roles as $key => $value ): if( $key == 'support-guest' ) continue; ?>
+				<label for="delete_ticket_role_<?php echo $key; ?>">
+					<input type="checkbox" value="<?php echo $key; ?>" id="delete_ticket_role_<?php echo $key; ?>" name="delete_ticket_roles[]" <?php checked( in_array( $key, $delete_ticket_roles ) ); ?> /> <?php echo $value; ?><br/>
+				</label>
+			<?php endforeach; ?>
+		<?php $this->render_row( __( 'Rollen, die Tickets löschen dürfen', 'psource-support' ), ob_get_clean() ); ?>
+
+	</table>
+
 
 	<h3><?php _e( 'Privatsphäreeinstellungen', 'psource-support' ); ?></h3>
 	<table class="form-table">

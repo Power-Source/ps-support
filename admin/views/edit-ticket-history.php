@@ -11,6 +11,21 @@
 	<h2><?php esc_html_e( 'Neue Antwort einfügen', 'psource-support' ); ?></h2>
 
 	<h4 class="support-system-add-reply-subtitle"><?php _e("Bitte gib so viele Informationen wie möglich an, damit der Benutzer die Lösung/Anfrage verstehen kann.", 'psource-support'); ?></h4>
+	<?php if ( ! empty( $reply_templates ) ) : ?>
+		<div class="support-reply-template-picker">
+			<label for="support-reply-template-select"><strong><?php _e( 'Antwort-Template', 'psource-support' ); ?></strong></label>
+			<div class="support-reply-template-controls">
+				<select id="support-reply-template-select" class="support-reply-template-select">
+					<option value=""><?php _e( 'Template auswählen', 'psource-support' ); ?></option>
+					<?php foreach ( $reply_templates as $reply_template ) : ?>
+						<option value="<?php echo esc_attr( $reply_template['id'] ); ?>"><?php echo esc_html( $reply_template['title'] ); ?></option>
+					<?php endforeach; ?>
+				</select>
+				<button type="button" class="button support-insert-reply-template"><?php _e( 'Template einfügen', 'psource-support' ); ?></button>
+			</div>
+			<p class="description"><?php _e( 'Fügt den Inhalt des ausgewählten Templates an der aktuellen Cursor-Position in die Antwort ein.', 'psource-support' ); ?></p>
+		</div>
+	<?php endif; ?>
 	<?php remove_all_filters( 'mce_buttons' ); ?>
 	<?php remove_all_filters( 'mce_external_plugins' ); ?>
 	<?php remove_all_filters( 'mce_buttons_1' ); ?>
@@ -53,7 +68,17 @@
 				<span class="description"><?php _e("Sobald ein Ticket geschlossen ist, können Benutzer nicht mehr darauf antworten (oder es aktualisieren).", 'psource-support'); ?></span>
 			<?php $this->render_row(__( "Ticket schließen?", 'psource-support' ), ob_get_clean() ); ?>
 		<?php endif; ?>
-		
+
+		<?php if ( psource_support_current_user_can( 'update_ticket' ) ): ?>
+			<?php ob_start(); ?>
+				<label for="is-internal-note">
+					<input type="checkbox" name="is_internal" id="is-internal-note" value="1" />
+					<strong><?php _e( 'Interne Notiz', 'psource-support' ); ?></strong>
+				</label>
+				<span class="description"><?php _e( 'Nur für Mitarbeiter sichtbar &ndash; Benutzer sehen diese Antwort nicht.', 'psource-support' ); ?></span>
+			<?php $this->render_row( __( 'Sichtbarkeit', 'psource-support' ), ob_get_clean() ); ?>
+		<?php endif; ?>
+
 		<input type="hidden" name="ticket_id" value="<?php echo $ticket->ticket_id; ?>" />
 		<?php wp_nonce_field( 'add-ticket-reply-' . $ticket->ticket_id ); ?>
 	</table>

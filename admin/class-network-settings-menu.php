@@ -64,6 +64,9 @@ class PSource_Support_Network_Settings_Menu extends PSource_Support_Admin_Menu {
 		$faqs_role = $settings['psource_support_faqs_role'];
 		$ticket_privacy = $settings['psource_ticket_privacy'];
 		$crm_sync_blog_id = absint( $settings['psource_support_crm_sync_blog_id'] );
+		$staff_roles = isset( $settings['psource_support_staff_roles'] ) ? (array) $settings['psource_support_staff_roles'] : array( 'administrator', 'editor' );
+		$close_ticket_roles = isset( $settings['psource_support_close_ticket_roles'] ) ? (array) $settings['psource_support_close_ticket_roles'] : array( 'administrator', 'editor' );
+		$delete_ticket_roles = isset( $settings['psource_support_delete_ticket_roles'] ) ? (array) $settings['psource_support_delete_ticket_roles'] : array( 'administrator' );
 		$roles = MU_Support_System::get_roles();
 
 		$errors = get_settings_errors( 'psource-support-settings' );
@@ -315,6 +318,33 @@ class PSource_Support_Network_Settings_Menu extends PSource_Support_Admin_Menu {
 			}
 		}
 
+		// STAFF ROLES
+		$settings['psource_support_staff_roles'] = array();
+		if ( isset( $input['staff_roles'] ) && is_array( $input['staff_roles'] ) ) {
+			foreach ( $input['staff_roles'] as $role ) {
+				if ( array_key_exists( $role, MU_Support_System::get_roles() ) )
+					$settings['psource_support_staff_roles'][] = $role;
+			}
+		}
+
+		// CLOSE TICKET ROLES
+		$settings['psource_support_close_ticket_roles'] = array();
+		if ( isset( $input['close_ticket_roles'] ) && is_array( $input['close_ticket_roles'] ) ) {
+			foreach ( $input['close_ticket_roles'] as $role ) {
+				if ( array_key_exists( $role, MU_Support_System::get_roles() ) )
+					$settings['psource_support_close_ticket_roles'][] = $role;
+			}
+		}
+
+		// DELETE TICKET ROLES
+		$settings['psource_support_delete_ticket_roles'] = array();
+		if ( isset( $input['delete_ticket_roles'] ) && is_array( $input['delete_ticket_roles'] ) ) {
+			foreach ( $input['delete_ticket_roles'] as $role ) {
+				if ( array_key_exists( $role, MU_Support_System::get_roles() ) )
+					$settings['psource_support_delete_ticket_roles'][] = $role;
+			}
+		}
+
 		return stripslashes_deep( $settings );
 	}
 
@@ -385,6 +415,73 @@ class PSource_Support_Network_Settings_Menu extends PSource_Support_Admin_Menu {
 	}
 		
 
+	public function render_labels_settings() {
+		if ( ! psource_support_current_user_can( 'manage_options' ) ) {
+			wp_die( __( 'Nicht ausreichend Berechtigungen.', 'psource-support' ) );
+		}
+
+		// Handle delete
+		if ( isset( $_POST['delete_label'] ) && check_admin_referer( 'psource-support-labels-nonce' ) ) {
+			$del_id = absint( $_POST['delete_label'] );
+			psource_support_delete_label( $del_id );
+		}
+
+		// Handle add or update
+		if ( isset( $_POST['label_save'] ) && check_admin_referer( 'psource-support-labels-nonce' ) ) {
+			$label_name  = sanitize_text_field( wp_unslash( isset( $_POST['label_name'] ) ? $_POST['label_name'] : '' ) );
+			$label_color = sanitize_hex_color( wp_unslash( isset( $_POST['label_color'] ) ? $_POST['label_color'] : '#607d8b' ) );
+			if ( ! $label_color ) $label_color = '#607d8b';
+			$label_id    = absint( isset( $_POST['label_id'] ) ? $_POST['label_id'] : 0 );
+
+			if ( $label_id ) {
+				psource_support_update_label( $label_id, $label_name, $label_color );
+			} elseif ( $label_name ) {
+				psource_support_insert_label( $label_name, $label_color );
+			}
+		}
+
+		$labels   = psource_support_get_labels();
+		$form_url = add_query_arg( 'tab', 'labels' );
+		include( 'views/network-settings-labels.php' );
+	}
+
+	public function render_templates_settings() {
+		if ( ! psource_support_current_user_can( 'manage_options' ) ) {
+			wp_die( __( 'Nicht ausreichend Berechtigungen.', 'psource-support' ) );
+		}
+
+		// Handle delete
+		if ( isset( $_POST['delete_template'] ) && check_admin_referer( 'psource-support-templates-nonce' ) ) {
+			$del_id = absint( $_POST['delete_template'] );
+			psource_support_delete_reply_template( $del_id );
+		}
+
+		// Handle save
+		if ( isset( $_POST['template_save'] ) && check_admin_referer( 'psource-support-templates-nonce' ) ) {
+			$tpl_title   = sanitize_text_field( wp_unslash( isset( $_POST['template_title'] ) ? $_POST['template_title'] : '' ) );
+			$tpl_content = wp_kses_post( wp_unslash( isset( $_POST['template_content'] ) ? $_POST['template_content'] : '' ) );
+			$tpl_id      = absint( isset( $_POST['template_id'] ) ? $_POST['template_id'] : 0 );
+
+			if ( $tpl_id ) {
+				psource_support_update_reply_template( $tpl_id, $tpl_title, $tpl_content );
+			} elseif ( $tpl_title ) {
+				psource_support_insert_reply_template( $tpl_title, $tpl_content );
+			}
+		}
+
+		$templates = psource_support_get_reply_templates();
+		$form_url  = add_query_arg( 'tab', 'templates' );
+		include( 'views/network-settings-templates.php' );
+	}
+
+	public function validate_labels_settings() {
+		return false;
+	}
+
+	public function validate_templates_settings() {
+		return false;
+	}
+
 	protected function render_tabs() {
 		$updated = isset( $_GET['updated'] );
 		$tabs = $this->get_tabs();
@@ -407,7 +504,9 @@ class PSource_Support_Network_Settings_Menu extends PSource_Support_Admin_Menu {
 		 */
 		return apply_filters( 'support_system_settings_tabs', array(
 			'general' => __( 'Basiseinstellungen', 'psource-support' ),
-			'front' => __( 'Front-End Einstellungen', 'psource-support' )
+			'front' => __( 'Front-End Einstellungen', 'psource-support' ),
+			'labels' => __( 'Labels', 'psource-support' ),
+			'templates' => __( 'Antwort-Templates', 'psource-support' ),
 		) );
 	}
 

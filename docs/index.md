@@ -13,6 +13,12 @@ title: "PS Support System"
 
 Richte auf jeder ClassicPress-Seite ein fantastisches Support-Ticket-System mit häufig gestellten Fragen ein.
 
+## Analyse und Dokumentation
+
+Eine technische Analyse zu Funktionsweise, Einstellungen, Einsatzmoeglichkeiten und Ausbaupotenzial findest Du hier:
+
+* [PS Support System Analyse](support-system-analyse)
+
 ## PS Support System steigert Deinen Service von „gut“ auf „GROSSARTIG“, indem es ein Support-Ticketsystem mit FAQ hinzufügt.
 
 Richte schnell ein umfassendes FAQ und ein zuverlässiges Ticketsystem für Ihre Benutzer ein. Bringe die Grundlagen für unglaublichen Support auf Deine Webseite oder Dein Netzwerk.

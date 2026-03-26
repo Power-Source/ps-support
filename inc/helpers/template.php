@@ -95,6 +95,12 @@ function psource_support_list_replies( $args = array() ) {
 	// Remove the main reply
 	unset( $replies[0] );
 
+	// Filter out internal notes for non-staff users
+	if ( ! psource_support_current_user_can( 'update_ticket' ) ) {
+		$replies = array_filter( $replies, function( $reply ) {
+			return ! (int) $reply->is_internal;
+		} );
+	}
 
 	global $ticket_reply;
 

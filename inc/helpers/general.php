@@ -308,6 +308,11 @@ function psource_support_register_admin_script() {
 		'attachmentRemoveTitle' => __( 'Datei löschen', 'psource-support' ),
 		'attachmentRemoveText' => __( 'Datei löschen', 'psource-support' ),
 		'deleteConfirm' => __( 'Möchtest Du dieses Ticket wirklich löschen?', 'psource-support' ),
+		'ajaxurl' => admin_url( 'admin-ajax.php' ),
+		'replyTemplateNonce' => wp_create_nonce( 'psource-support-reply-template' ),
+		'replyTemplateEmpty' => __( 'Bitte zuerst ein Template auswählen.', 'psource-support' ),
+		'replyTemplateInsert' => __( 'Template einfügen', 'psource-support' ),
+		'replyTemplateError' => __( 'Template konnte nicht geladen werden.', 'psource-support' ),
 	);
 
 	wp_localize_script( 'support-system-admin', 'support_system_admin_i18n', $l10n );

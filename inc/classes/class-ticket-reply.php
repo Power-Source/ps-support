@@ -22,6 +22,8 @@ class PSource_Support_Ticket_Reply {
 
 	public $is_main_reply = false;
 
+	public $is_internal = 0;
+
 	public static function get_instance( $ticket_reply_id ) {
 		global $wpdb, $current_site;
 

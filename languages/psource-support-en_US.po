@@ -1553,3 +1553,147 @@ msgstr "Open"
 #: admin/views/edit-ticket-history.php:36
 msgid "Übernimm die Verantwortung für dieses Ticket"
 msgstr "Take responsibility for this ticket"
+
+# ----- Ausbaustufe 3: Labels, Templates, Berechtigungen -----
+
+#: admin/views/edit-ticket-history.php
+msgid "Antwort-Template"
+msgstr "Reply Template"
+
+#: admin/views/edit-ticket-history.php
+msgid "Template auswählen"
+msgstr "Select template"
+
+#: admin/views/edit-ticket-history.php
+msgid "Template einfügen"
+msgstr "Insert template"
+
+#: admin/views/edit-ticket-history.php
+msgid "Fügt den Inhalt des ausgewählten Templates an der aktuellen Cursor-Position in die Antwort ein."
+msgstr "Inserts the selected template content at the current cursor position."
+
+#: admin/views/edit-ticket-history.php
+msgid "Interne Notiz"
+msgstr "Internal Note"
+
+#: admin/views/edit-ticket-history.php
+msgid "Sichtbarkeit"
+msgstr "Visibility"
+
+#: admin/views/edit-ticket-history.php
+msgid "Nur für Mitarbeiter sichtbar – Benutzer sehen diese Antwort nicht."
+msgstr "Visible to staff only – users will not see this reply."
+
+#: admin/views/network-settings-templates.php
+msgid "Antwort-Templates verwalten"
+msgstr "Manage Reply Templates"
+
+#: admin/views/network-settings-templates.php
+msgid "Vordefinierte Textbausteine, die beim Verfassen von Antworten per Klick eingefügt werden können."
+msgstr "Predefined text snippets that can be inserted into replies with a single click."
+
+#: admin/views/network-settings-templates.php
+msgid "Titel"
+msgstr "Title"
+
+#: admin/views/network-settings-templates.php
+msgid "Inhalt"
+msgstr "Content"
+
+#: admin/views/network-settings-templates.php
+msgid "Template hinzufügen"
+msgstr "Add template"
+
+#: admin/views/network-settings-templates.php
+msgid "Vorhandene Templates"
+msgstr "Existing templates"
+
+#: admin/views/network-settings-templates.php
+msgid "Template wirklich löschen?"
+msgstr "Really delete this template?"
+
+#: admin/views/network-settings-templates.php
+msgid "Noch keine Templates vorhanden."
+msgstr "No templates yet."
+
+#: admin/views/network-settings-labels.php
+msgid "Ticket-Labels verwalten"
+msgstr "Manage Ticket Labels"
+
+#: admin/views/network-settings-labels.php
+msgid "Labels können Tickets zur freien Kategorisierung zugewiesen werden."
+msgstr "Labels can be assigned to tickets for free-form categorisation."
+
+#: admin/views/network-settings-labels.php
+msgid "Name"
+msgstr "Name"
+
+#: admin/views/network-settings-labels.php
+msgid "Farbe"
+msgstr "Color"
+
+#: admin/views/network-settings-labels.php
+msgid "Label hinzufügen"
+msgstr "Add label"
+
+#: admin/views/network-settings-labels.php
+msgid "Vorhandene Labels"
+msgstr "Existing labels"
+
+#: admin/views/network-settings-labels.php
+msgid "Label wirklich löschen?"
+msgstr "Really delete this label?"
+
+#: admin/views/network-settings-labels.php
+msgid "Noch keine Labels vorhanden."
+msgstr "No labels yet."
+
+#: admin/views/network-settings-labels.php
+msgid "Aktionen"
+msgstr "Actions"
+
+#: admin/views/network-settings-general.php
+msgid "Mitarbeiter-Berechtigungen"
+msgstr "Staff Permissions"
+
+#: admin/views/network-settings-general.php
+msgid "Mitarbeiter-Rollen (Antworten, Zuweisen, Bearbeiten, Labels)"
+msgstr "Staff roles (reply, assign, edit, labels)"
+
+#: admin/views/network-settings-general.php
+msgid "Lege pro Aktion fest, welche Rollen als Staff gelten und die Aktion ausführen dürfen. Super-Admins können immer alles."
+msgstr "Define per action which roles count as staff. Super-Admins always have full access."
+
+#: admin/views/network-settings-general.php
+msgid "Rollen, die Tickets schließen/öffnen dürfen"
+msgstr "Roles allowed to close/reopen tickets"
+
+#: admin/views/network-settings-general.php
+msgid "Rollen, die Tickets löschen dürfen"
+msgstr "Roles allowed to delete tickets"
+
+#: admin/inc/ajax.php
+msgid "Template nicht gefunden."
+msgstr "Template not found."
+
+#: inc/helpers/label.php
+msgid "Ungültiger Farbwert."
+msgstr "Invalid color value."
+
+#: inc/helpers/capabilities.php
+#: admin/inc/ajax.php
+msgid "Nicht ausreichend Berechtigungen."
+msgstr "Insufficient permissions."
+
+#: admin/inc/ajax.php
+msgid "Ungültige Anfrage."
+msgstr "Invalid request."
+
+#: inc/helpers/general.php
+msgid "Bitte zuerst ein Template auswählen."
+msgstr "Please select a template first."
+
+#: inc/helpers/general.php
+msgid "Template konnte nicht geladen werden."
+msgstr "Template could not be loaded."
+

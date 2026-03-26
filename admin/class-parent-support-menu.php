@@ -58,6 +58,8 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 		$filters = array(
 			'category' => false,
 			'priority' => false,
+			'assignment' => false,
+			'ticket_status' => false,
 			's' => false,
 		);
 
@@ -66,6 +68,12 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 
 		if ( isset( $_REQUEST['ticket-priority'] ) && $_REQUEST['ticket-priority'] !== '' )
 			$filters['priority'] = $_REQUEST['ticket-priority'];
+
+		if ( isset( $_REQUEST['assignment'] ) && $_REQUEST['assignment'] !== '' )
+			$filters['assignment'] = sanitize_key( wp_unslash( $_REQUEST['assignment'] ) );
+
+		if ( isset( $_REQUEST['ticket-status'] ) && $_REQUEST['ticket-status'] !== '' )
+			$filters['ticket_status'] = absint( $_REQUEST['ticket-status'] );
 
 		if ( ! empty( $_REQUEST['s'] ) )
 			$filters['s'] = stripslashes_deep( $_REQUEST['s'] );
@@ -130,6 +138,15 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 			psource_support_update_ticket( $ticket_id, $args );
 		}
 
+		// Save labels
+		if ( psource_support_current_user_can( 'label_ticket' ) ) {
+			$label_ids = array();
+			if ( isset( $_POST['ticket_labels'] ) && is_array( $_POST['ticket_labels'] ) ) {
+				$label_ids = array_map( 'absint', $_POST['ticket_labels'] );
+			}
+			psource_support_set_ticket_labels( $ticket_id, $label_ids );
+		}
+
 		$redirect = add_query_arg( 'updated', 'true' );
 		wp_redirect( $redirect );
 		exit();
@@ -148,8 +165,11 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 		if ( ! $ticket )
 			wp_die( __( 'Das Ticket existiert nicht', 'psource-support' ) );
 
+		$is_internal = ( isset( $_POST['is_internal'] ) && psource_support_current_user_can( 'update_ticket' ) ) ? 1 : 0;
+
 		$reply_args = array(
-			'poster_id' => get_current_user_id(),
+			'poster_id'   => get_current_user_id(),
+			'is_internal' => $is_internal,
 		);
 
 		$message = isset( $_POST['message-text'] ) ? wpautop( stripslashes_deep( $_POST['message-text'] ) ) : '';
@@ -360,6 +380,19 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 
 		$fields = apply_filters( 'support_network_ticket_details_fields', $fields, $ticket );
 
+		// Labels
+		$ticket_labels = psource_support_get_ticket_labels( $ticket->ticket_id );
+		if ( ! empty( $ticket_labels ) ) {
+			$labels_html = '';
+			foreach ( $ticket_labels as $label ) {
+				$labels_html .= '<span class="support-ticket-label" style="background:' . esc_attr( $label->label_color ) . '">' . esc_html( $label->label_name ) . '</span> ';
+			}
+			$fields['ticket-labels'] = array(
+				'label'   => __( 'Labels', 'psource-support' ),
+				'content' => $labels_html,
+			);
+		}
+
 		include_once( 'views/edit-ticket-details-metabox.php' );
 	}
 
@@ -421,6 +454,26 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 				'label' => '<label for="close-ticket-checkbox">' . __( 'Ticket geschlossen', 'psource-support' ) . '</label>',
 				'content' => '<input name="close-ticket" id="close-ticket-checkbox" type="checkbox" ' . checked( $ticket->is_closed(), true, false ) . ' />'
 			);
+		}
+
+		// Labels
+		if ( psource_support_current_user_can( 'label_ticket' ) ) {
+			$all_labels = psource_support_get_labels();
+			if ( ! empty( $all_labels ) ) {
+				$current_label_ids = psource_support_get_ticket_label_ids( $ticket->ticket_id );
+				$label_checkboxes = '';
+				foreach ( $all_labels as $label ) {
+					$checked = in_array( (int) $label->label_id, $current_label_ids ) ? 'checked="checked" ' : '';
+					$label_checkboxes .= '<label class="support-label-checkbox">';
+					$label_checkboxes .= '<input type="checkbox" name="ticket_labels[]" value="' . esc_attr( $label->label_id ) . '" ' . $checked . '/> ';
+					$label_checkboxes .= '<span class="support-ticket-label" style="background:' . esc_attr( $label->label_color ) . '">' . esc_html( $label->label_name ) . '</span>';
+					$label_checkboxes .= '</label> ';
+				}
+				$fields['ticket-labels'] = array(
+					'label'   => __( 'Labels', 'psource-support' ),
+					'content' => $label_checkboxes,
+				);
+			}
 		}
 
 		$fields = apply_filters( 'support_network_ticket_update_fields', $fields, $ticket );
@@ -494,6 +547,7 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 		}
 
 		$errors = get_settings_errors( 'support_system_submit_reply' );
+		$reply_templates = psource_support_get_reply_templates();
 
 		include_once( 'views/edit-ticket-history-metabox.php' );
 
@@ -507,8 +561,16 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 		$status = $this->get_status_filter();
 		$category = $this->get_filter( 'category' );
 		$priority = $this->get_filter( 'priority' );
+		$assignment = $this->get_assignment_filter();
+		$ticket_status = $this->get_ticket_status_filter();
 
-	    $tickets_table = new PSource_Support_Tickets_Table( array( 'status' => $status ) );
+	    $tickets_table = new PSource_Support_Tickets_Table(
+			array(
+				'status' => $status,
+				'assignment' => $assignment,
+				'ticket_status' => $ticket_status,
+			)
+		);
 
 	    $tickets_table->prepare_items();
 
@@ -519,12 +581,21 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 	    if ( false !== $category ) 
 	    	$counts_args['category'] = absint( $category );
 
+		if ( false !== $assignment ) {
+			if ( 'mine' === $assignment )
+				$counts_args['admin_id'] = get_current_user_id();
+			elseif ( 'unassigned' === $assignment )
+				$counts_args['admin_id'] = 0;
+			elseif ( 'assigned' === $assignment )
+				$counts_args['has_admin'] = true;
+		}
+
 	    /**
-	     * Filters the arguments that will be passed to the function that counts the tickets
-	     * in the admin page
-	     * 
-	     * @param Array $counts_args Count arguments
-	     */
+	    	 * Filters the arguments that will be passed to the function that counts the tickets
+	    	 * in the admin page
+	    	 * 
+	    	 * @param Array $counts_args Count arguments
+	    	 */
 	    $counts_args = apply_filters( 'support_system_support_menu_counts_args', $counts_args );
 
 	    $all_tickets_count = psource_support_get_tickets_count( $counts_args );
@@ -532,6 +603,20 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 	    $counts_args['status'] = 'archive';
 	    $archived_tickets_count = psource_support_get_tickets_count( $counts_args );
 	    $active_tickets_count = $all_tickets_count - $archived_tickets_count;
+
+		$overview_counts_args = $counts_args;
+		unset( $overview_counts_args['status'] );
+		unset( $overview_counts_args['ticket_status'] );
+
+		$ticket_overview = array(
+			'active' => psource_support_get_tickets_count( array_merge( $overview_counts_args, array( 'status' => 'active' ) ) ),
+			'unassigned' => psource_support_get_tickets_count( array_merge( $overview_counts_args, array( 'status' => 'active', 'admin_id' => 0 ) ) ),
+			'waiting_admin' => psource_support_get_tickets_count( array_merge( $overview_counts_args, array( 'ticket_status' => 3 ) ) ),
+			'waiting_user' => psource_support_get_tickets_count( array_merge( $overview_counts_args, array( 'ticket_status' => 2 ) ) ),
+			'urgent' => psource_support_get_tickets_count( array_merge( $overview_counts_args, array( 'status' => 'active', 'priority' => 4 ) ) ),
+			'closed' => psource_support_get_tickets_count( array_merge( $overview_counts_args, array( 'status' => 'archive' ) ) ),
+			'my_queue' => psource_support_get_tickets_count( array_merge( $overview_counts_args, array( 'status' => 'active', 'admin_id' => get_current_user_id(), 'ticket_status' => 3 ) ) ),
+		);
 
 	    include( 'views/network-tickets.php' );
 	}
@@ -554,6 +639,29 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 			return false;
 
 		return $_REQUEST[ $slug ];
+	}
+
+	protected function get_assignment_filter() {
+		$assignment = $this->get_filter( 'assignment' );
+		$accepted = array( 'mine', 'unassigned', 'assigned' );
+
+		if ( ! in_array( $assignment, $accepted, true ) )
+			return false;
+
+		return $assignment;
+	}
+
+	protected function get_ticket_status_filter() {
+		$ticket_status = $this->get_filter( 'ticket_status' );
+
+		if ( false === $ticket_status || '' === $ticket_status )
+			return false;
+
+		$ticket_status = absint( $ticket_status );
+		if ( $ticket_status > 5 )
+			return false;
+
+		return $ticket_status;
 	}
 
 }

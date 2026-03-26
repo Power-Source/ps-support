@@ -48,7 +48,10 @@ class PSource_Support_Settings {
 			'psource_ticket_privacy' => 'all',
 			'psource_support_tickets_role' => array( 'administrator', 'editor', 'author', 'contributor', 'subscriber' ),
 			'psource_support_faqs_role' => array( 'administrator', 'editor', 'author', 'contributor', 'subscriber' ),
-			'psource_support_main_super_admin' => $main_super_admin, //First of the Super Admins
+			'psource_support_staff_roles' => array( 'administrator', 'editor' ),
+			'psource_support_close_ticket_roles' => array( 'administrator', 'editor' ),
+			'psource_support_delete_ticket_roles' => array( 'administrator' ),
+			'psource_support_main_super_admin' => $main_super_admin,
 			'psource_support_support_page' => 0,
 			'psource_support_create_new_ticket_page' => 0,
 			'psource_support_faqs_page' => 0,

@@ -61,9 +61,21 @@ class PSource_Support_Tickets_History_Table extends WP_List_Table {
                 #ticket-replies-list td {
                     border-bottom:1px solid #E5E5E5;
                 }
+                #ticket-replies-list tr.ticket-history-internal {
+                    background: #fffbe6;
+                    border-left: 3px solid #f0b849;
+                }
             </style>
         <?php
 
+    }
+
+    function single_row( $item ) {
+        $classes = $this->get_table_classes();
+        $row_class = (int) $item->is_internal ? ' class="ticket-history-internal"' : '';
+        echo '<tr' . $row_class . '>';
+        echo $this->single_row_columns( $item );
+        echo '</tr>';
     }
 
     function column_poster( $item ) {
@@ -95,6 +107,9 @@ class PSource_Support_Tickets_History_Table extends WP_List_Table {
         ob_start();
         ?>
             <div class="submitted-on"><?php printf( _x( 'Gesendet am %s', 'Antwort am Datum gesendet', 'psource-support' ), psource_support_get_translated_date( $item->message_date ) ); ?></div>
+            <?php if ( (int) $item->is_internal ): ?>
+                <span class="ticket-internal-badge"><?php _e( 'Interne Notiz', 'psource-support' ); ?></span>
+            <?php endif; ?>
             <?php if ( $item->is_main_reply ): ?>
                 <h3 class="support-system-reply-subject"><?php echo $item->subject; ?></h3>
             <?php endif; ?>

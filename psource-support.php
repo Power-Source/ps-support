@@ -5,7 +5,7 @@ Plugin URI: https://cp-psource.github.io/ps-support/
 Description: Richte auf jeder ClassicPress-Seite ein fantastisches Support-Ticket-System mit häufig gestellten Fragen ein, oder biete Deinen Usern einen Netzwerkweiten HelpDesk
 Author: PSOURCE
 Network: true
-Version: 1.0.0
+Version: 1.2.0
 License: GPLv2
 Author URI: https://github.com/cp-psource/
 Domain Path: languages
@@ -30,7 +30,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-define( 'PSOURCE_SUPPORT_PLUGIN_VERSION', '1.0.0' );
+define( 'PSOURCE_SUPPORT_PLUGIN_VERSION', '1.2.0' );
 
 if ( ! defined( 'PSOURCE_SUPPORT_LANG_DOMAIN' ) )
 	define('PSOURCE_SUPPORT_LANG_DOMAIN', 'psource-support');
@@ -203,6 +203,8 @@ if ( ! class_exists( 'MU_Support_System') ) {
 			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'inc/helpers/template.php');
 			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'inc/helpers/settings.php');
 			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'inc/helpers/capabilities.php');
+			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'inc/helpers/label.php');
+			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'inc/helpers/reply-template.php');
 			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'inc/helpers/faq.php');
 			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'inc/helpers/faq-category.php');
 

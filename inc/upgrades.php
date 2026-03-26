@@ -50,8 +50,10 @@ function psource_support_check_for_upgrades() {
 		psource_support()->activate();
 	}
 
-	if ( ! $saved_version || version_compare( $saved_version, PSOURCE_SUPPORT_PLUGIN_VERSION ) < 0 ) {
-
+	// Upgrade-Routinen immer ausführen – der äußere Versionscheck wird bewusst nicht
+	// verwendet, damit die Logik auch greift wenn der gespeicherte Wert aus einer
+	// anderen Versionsnummer-Reihe stammt (z. B. ältere 2.x-Builds).
+	{
 		$model = MU_Support_System_Model::get_instance();
 
 		if ( version_compare( $saved_version, '1.7.2.2' ) < 0 )
@@ -89,6 +91,14 @@ function psource_support_check_for_upgrades() {
 
 		if ( version_compare( $saved_version, '2.1.8' ) < 0 ) {
 			psource_support()->model->create_tables();
+		}
+
+		// Sicherheitsnetz: neue Tabellen anlegen falls sie fehlen (unabhängig von Versionslogik,
+		// da der gespeicherte Versionsstand aus einer früheren Codebase stammen kann).
+		global $wpdb;
+		if ( ! $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->base_prefix . 'support_labels' ) ) ) {
+			psource_support()->model->create_labels_table();
+			psource_support()->model->create_ticket_labels_table();
 		}
 
 		update_site_option( 'psource_support_version', PSOURCE_SUPPORT_PLUGIN_VERSION );

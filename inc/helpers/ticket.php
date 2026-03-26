@@ -135,7 +135,10 @@ function psource_support_build_tickets_query_parts( $args ) {
 	$tables = psource_support_get_ticket_tables();
 
 	$where = array();
-	if ( 'archive' == $args['status'] )
+	if ( $args['ticket_status'] !== false && $args['ticket_status'] !== null && $args['ticket_status'] !== '' ) {
+		$where[] = $wpdb->prepare( "t.ticket_status = %d", absint( $args['ticket_status'] ) );
+	}
+	elseif ( 'archive' == $args['status'] )
 		$where[] = "t.ticket_status = 5";
 	elseif ( 'all' == $args['status'] )
 		$where[] = '1 = 1';
@@ -150,6 +153,12 @@ function psource_support_build_tickets_query_parts( $args ) {
 
 	if ( absint( $args['blog_id'] ) > 0 )
 		$where[] = $wpdb->prepare( "t.blog_id = %d", $args['blog_id'] );
+
+	if ( $args['admin_id'] !== false && $args['admin_id'] !== null && $args['admin_id'] !== '' )
+		$where[] = $wpdb->prepare( "t.admin_id = %d", absint( $args['admin_id'] ) );
+
+	if ( $args['has_admin'] === true )
+		$where[] = "t.admin_id > 0";
 
 	if ( ! empty( $args['user_in'] ) && is_array( $args['user_in'] ) ) {
 		$user_in = array_map( 'absint', $args['user_in'] );
@@ -210,8 +219,11 @@ function psource_support_get_ticket_rows( $args ) {
 		'per_page' => get_option( 'posts_per_page' ),
 		'page' => 1,
 		'status' => 'all',
+		'ticket_status' => false,
 		'view_by_superadmin' => null,
 		'blog_id' => false,
+		'admin_id' => false,
+		'has_admin' => null,
 		'user_in' => false,
 		'category' => false,
 		'priority' => false,

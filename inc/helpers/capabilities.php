@@ -29,9 +29,6 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 			else {
 				$user_role = isset( $user->roles[0] ) ? $user->roles[0] : '';
 				if ( is_multisite() ) {
-					// The user has not enough role in the Support blog.
-					// Let's see if he has enough roles in other sites
-					// This needs to be improved though
 					$user_blogs = get_blogs_of_user( $user_id );
 					$current_blog_id = get_current_blog_id();
 					foreach ( $user_blogs as $blog ) {
@@ -54,6 +51,12 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 			
 		}
 
+		// Fine-grained capabilities: roles that are allowed per cap
+		$staff_caps = array( 'reply_ticket', 'assign_ticket', 'delete_reply', 'label_ticket' );
+		$staff_roles = isset( $settings['psource_support_staff_roles'] )
+			? (array) $settings['psource_support_staff_roles']
+			: array( 'administrator', 'editor' );
+
 		switch ( $cap ) {
 			case 'insert_ticket':
 			case 'read_ticket':
@@ -62,7 +65,32 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 					$user_can = true;
 				break; 
 			}
-			
+
+			// Staff-only capabilities: configurable via settings
+			case 'reply_ticket':
+			case 'assign_ticket':
+			case 'label_ticket': {
+				if ( in_array( $user_role, $staff_roles ) )
+					$user_can = true;
+				break;
+			}
+
+			case 'delete_reply': {
+				if ( in_array( $user_role, $staff_roles ) ) {
+					$user_can = true;
+				} else {
+					// Ticket owner can delete their own reply
+					$args = array_slice( func_get_args(), 2 );
+					if ( isset( $args[0] ) ) {
+						$reply = psource_support_get_ticket_reply( absint( $args[0] ) );
+						if ( $reply && (int) $reply->user_id === (int) $user_id ) {
+							$user_can = true;
+						}
+					}
+				}
+				break;
+			}
+
 			case 'update_reply': { $user_can = false; break; }
 
 			case 'insert_ticket_category': 
@@ -87,6 +115,15 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 					break;
 				}
 
+				// Staff with close_ticket setting can close
+				$close_roles = isset( $settings['psource_support_close_ticket_roles'] )
+					? (array) $settings['psource_support_close_ticket_roles']
+					: $staff_roles;
+				if ( in_array( $user_role, $close_roles ) ) {
+					$user_can = true;
+					break;
+				}
+
 				$args = array_slice( func_get_args(), 2 );
 				if ( isset( $args[0] ) ) {
 					$ticket = psource_support_get_ticket( $args[0] );
@@ -97,9 +134,18 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 				break;
 			}
 
-			case 'delete_ticket': 
+			case 'delete_ticket': { 
+				$delete_roles = isset( $settings['psource_support_delete_ticket_roles'] )
+					? (array) $settings['psource_support_delete_ticket_roles']
+					: array( 'administrator' );
+				if ( in_array( $user_role, $delete_roles ) )
+					$user_can = true;
+				break;
+			}
+
 			case 'update_ticket': { 
-				$user_can = false;
+				if ( in_array( $user_role, $staff_roles ) )
+					$user_can = true;
 				break;
 			}
 
@@ -130,6 +176,17 @@ function psource_support_is_staff( $user_id = false ) {
 	if ( psource_support_user_can( $user_id, 'manage_options' ) )		
 		$is_staff = true;
 
+	if ( ! $is_staff ) {
+		$settings  = psource_support_get_settings();
+		$user      = get_userdata( $user_id );
+		$user_role = ( $user && isset( $user->roles[0] ) ) ? $user->roles[0] : '';
+		$staff_roles = isset( $settings['psource_support_staff_roles'] )
+			? (array) $settings['psource_support_staff_roles']
+			: array( 'administrator', 'editor' );
+		if ( in_array( $user_role, $staff_roles ) )
+			$is_staff = true;
+	}
+
 	$is_staff = apply_filters( 'support_system_is_staff', $is_staff, $user_id );
 
 	return $is_staff;
@@ -144,6 +201,10 @@ function psource_support_get_capabilities() {
 		'open_ticket',
 		'close_ticket',
 		'read_ticket',
+
+		'reply_ticket',
+		'assign_ticket',
+		'label_ticket',
 
 		'insert_reply',
 		'update_reply',

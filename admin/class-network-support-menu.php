@@ -47,10 +47,20 @@ class PSource_Support_Network_Support_Menu extends PSource_Support_Parent_Suppor
 		$category = $this->get_filter( 'category' );
 		$priority = $this->get_filter( 'priority' );
 		$s = $this->get_filter( 's' );
+		$assignment = $this->get_assignment_filter();
+		$ticket_status = $this->get_ticket_status_filter();
 
 		$args['s'] = $s;
 		$args['priority'] = $priority;
 		$args['category'] = $category;
+		$args['ticket_status'] = $ticket_status;
+
+		if ( 'mine' === $assignment )
+			$args['admin_id'] = get_current_user_id();
+		elseif ( 'unassigned' === $assignment )
+			$args['admin_id'] = 0;
+		elseif ( 'assigned' === $assignment )
+			$args['has_admin'] = true;
 
 		return $args;
 	}

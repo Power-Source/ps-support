@@ -21,10 +21,15 @@ function psource_support_get_ticket_reply_rows( $ticket_id ) {
 function psource_support_insert_ticket_reply_row( $insert ) {
 	global $wpdb;
 
+	$format = array();
+	foreach ( $insert as $value ) {
+		$format[] = is_int( $value ) ? '%d' : '%s';
+	}
+
 	$wpdb->insert(
 		psource_support_get_ticket_reply_table(),
 		$insert,
-		array( '%d', '%d', '%d', '%d', '%s', '%s', '%s', '%s' )
+		$format
 	);
 
 	return (int) $wpdb->insert_id;
@@ -121,7 +126,8 @@ function psource_support_insert_ticket_reply( $ticket_id, $args = array() ) {
 		'message' => '',
 		'message_date' => current_time( 'mysql', 1 ),
 		'attachments' => array(),
-		'send_emails' => true
+		'send_emails' => true,
+		'is_internal' => 0,
 	);
 
 	$args = wp_parse_args( $args, $defaults );
@@ -132,19 +138,21 @@ function psource_support_insert_ticket_reply( $ticket_id, $args = array() ) {
 	$message_date = $args['message_date'];
 	$attachments  = $args['attachments'];
 	$send_emails  = $args['send_emails'];
+	$is_internal  = (int) $args['is_internal'];
 
 	$message = wp_kses_post( wp_unslash( $message ) );
 
 	$reply_id = psource_support_insert_ticket_reply_row(
 		array(
-			'site_id' => $site_id,
-			'ticket_id' => absint( $ticket_id ),
-			'admin_id' => is_super_admin( $poster_id ) ? absint( $poster_id ) : 0,
-			'user_id' => is_super_admin( $poster_id ) ? 0 : absint( $poster_id ),
-			'subject' => $subject,
-			'message' => $message,
+			'site_id'     => $site_id,
+			'ticket_id'   => absint( $ticket_id ),
+			'admin_id'    => is_super_admin( $poster_id ) ? absint( $poster_id ) : 0,
+			'user_id'     => is_super_admin( $poster_id ) ? 0 : absint( $poster_id ),
+			'subject'     => $subject,
+			'message'     => $message,
 			'message_date' => $message_date,
-			'attachments' => maybe_serialize( $attachments )
+			'attachments' => maybe_serialize( $attachments ),
+			'is_internal' => $is_internal,
 		)
 	);
 

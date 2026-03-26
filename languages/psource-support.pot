@@ -1414,3 +1414,147 @@ msgstr ""
 #: admin/views/edit-ticket-history.php:36
 msgid "Übernimm die Verantwortung für dieses Ticket"
 msgstr ""
+
+# ----- Ausbaustufe 3: Labels, Templates, Berechtigungen -----
+
+#: admin/views/edit-ticket-history.php
+msgid "Antwort-Template"
+msgstr ""
+
+#: admin/views/edit-ticket-history.php
+msgid "Template auswählen"
+msgstr ""
+
+#: admin/views/edit-ticket-history.php
+msgid "Template einfügen"
+msgstr ""
+
+#: admin/views/edit-ticket-history.php
+msgid "Fügt den Inhalt des ausgewählten Templates an der aktuellen Cursor-Position in die Antwort ein."
+msgstr ""
+
+#: admin/views/edit-ticket-history.php
+msgid "Interne Notiz"
+msgstr ""
+
+#: admin/views/edit-ticket-history.php
+msgid "Sichtbarkeit"
+msgstr ""
+
+#: admin/views/edit-ticket-history.php
+msgid "Nur für Mitarbeiter sichtbar – Benutzer sehen diese Antwort nicht."
+msgstr ""
+
+#: admin/views/network-settings-templates.php
+msgid "Antwort-Templates verwalten"
+msgstr ""
+
+#: admin/views/network-settings-templates.php
+msgid "Vordefinierte Textbausteine, die beim Verfassen von Antworten per Klick eingefügt werden können."
+msgstr ""
+
+#: admin/views/network-settings-templates.php
+msgid "Titel"
+msgstr ""
+
+#: admin/views/network-settings-templates.php
+msgid "Inhalt"
+msgstr ""
+
+#: admin/views/network-settings-templates.php
+msgid "Template hinzufügen"
+msgstr ""
+
+#: admin/views/network-settings-templates.php
+msgid "Vorhandene Templates"
+msgstr ""
+
+#: admin/views/network-settings-templates.php
+msgid "Template wirklich löschen?"
+msgstr ""
+
+#: admin/views/network-settings-templates.php
+msgid "Noch keine Templates vorhanden."
+msgstr ""
+
+#: admin/views/network-settings-labels.php
+msgid "Ticket-Labels verwalten"
+msgstr ""
+
+#: admin/views/network-settings-labels.php
+msgid "Labels können Tickets zur freien Kategorisierung zugewiesen werden."
+msgstr ""
+
+#: admin/views/network-settings-labels.php
+msgid "Name"
+msgstr ""
+
+#: admin/views/network-settings-labels.php
+msgid "Farbe"
+msgstr ""
+
+#: admin/views/network-settings-labels.php
+msgid "Label hinzufügen"
+msgstr ""
+
+#: admin/views/network-settings-labels.php
+msgid "Vorhandene Labels"
+msgstr ""
+
+#: admin/views/network-settings-labels.php
+msgid "Label wirklich löschen?"
+msgstr ""
+
+#: admin/views/network-settings-labels.php
+msgid "Noch keine Labels vorhanden."
+msgstr ""
+
+#: admin/views/network-settings-labels.php
+msgid "Aktionen"
+msgstr ""
+
+#: admin/views/network-settings-general.php
+msgid "Mitarbeiter-Berechtigungen"
+msgstr ""
+
+#: admin/views/network-settings-general.php
+msgid "Mitarbeiter-Rollen (Antworten, Zuweisen, Bearbeiten, Labels)"
+msgstr ""
+
+#: admin/views/network-settings-general.php
+msgid "Lege pro Aktion fest, welche Rollen als Staff gelten und die Aktion ausführen dürfen. Super-Admins können immer alles."
+msgstr ""
+
+#: admin/views/network-settings-general.php
+msgid "Rollen, die Tickets schließen/öffnen dürfen"
+msgstr ""
+
+#: admin/views/network-settings-general.php
+msgid "Rollen, die Tickets löschen dürfen"
+msgstr ""
+
+#: admin/inc/ajax.php
+msgid "Template nicht gefunden."
+msgstr ""
+
+#: inc/helpers/label.php
+msgid "Ungültiger Farbwert."
+msgstr ""
+
+#: inc/helpers/capabilities.php
+#: admin/inc/ajax.php
+msgid "Nicht ausreichend Berechtigungen."
+msgstr ""
+
+#: admin/inc/ajax.php
+msgid "Ungültige Anfrage."
+msgstr ""
+
+#: inc/helpers/general.php
+msgid "Bitte zuerst ein Template auswählen."
+msgstr ""
+
+#: inc/helpers/general.php
+msgid "Template konnte nicht geladen werden."
+msgstr ""
+

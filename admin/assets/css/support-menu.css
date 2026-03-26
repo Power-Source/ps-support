@@ -10,9 +10,158 @@
 	margin-bottom: 10px;
 }
 
+.support-ticket-overview {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 12px;
+	margin: 16px 0 18px;
+}
 
+.support-ticket-overview-card {
+	display: block;
+	padding: 14px 16px;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	text-decoration: none;
+	color: #1d2327;
+}
+
+.support-ticket-overview-card:hover,
+.support-ticket-overview-card:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	color: #1d2327;
+}
+
+.support-ticket-overview-count {
+	display: block;
+	font-size: 26px;
+	line-height: 1.1;
+	font-weight: 700;
+	margin-bottom: 6px;
+}
+
+.support-ticket-overview-label {
+	display: block;
+	font-size: 13px;
+	line-height: 1.4;
+	color: #50575e;
+}
+
+.support-ticket-overview-card-urgent .support-ticket-overview-count {
+	color: #b32d2e;
+}
+
+.support-ticket-overview-card-unassigned .support-ticket-overview-count {
+	color: #d98500;
+}
+
+.support-ticket-overview-card-waiting_admin .support-ticket-overview-count,
+.support-ticket-overview-card-waiting_user .support-ticket-overview-count {
+	color: #2271b1;
+}
+
+.support-ticket-overview-card-my_queue .support-ticket-overview-count {
+	color: #1d7e4f;
+}
+
+/* Overdue row highlighting */
+#support-tickets tr.ticket-row-overdue td {
+	background-color: #fef0f0;
+}
+#support-tickets tr.ticket-row-warning td {
+	background-color: #fff8e1;
+}
+
+/* Warte-seit column colors */
+.ticket-waiting-ok {
+	color: #1d7e4f;
+}
+.ticket-waiting-warning {
+	color: #d98500;
+	font-weight: 600;
+}
+.ticket-waiting-overdue {
+	color: #b32d2e;
+	font-weight: 700;
+}
+.ticket-waiting-closed {
+	color: #a7aaad;
+}
+
+/* Interne Notiz Badge */
+.ticket-internal-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #7e5100;
+	background: #fff3cd;
+	border: 1px solid #f0b849;
+	border-radius: 3px;
+	margin-bottom: 6px;
+}
+
+.support-ticket-label {
+	display: inline-block;
+	padding: 3px 9px;
+	margin: 0 6px 6px 0;
+	border-radius: 999px;
+	color: #fff;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.4;
+}
+
+.support-label-checkbox {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0 12px 8px 0;
+	padding: 4px 8px;
+	border: 1px solid #dcdcde;
+	border-radius: 999px;
+	background: #fff;
+}
+
+.support-reply-template-picker {
+	margin: 12px 0 16px;
+	padding: 12px;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	background: #fff;
+}
+
+.support-reply-template-controls {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin: 6px 0;
+	flex-wrap: wrap;
+}
+
+.support-reply-template-select {
+	min-width: 260px;
+}
+
+/* Inline-Notices (non-blocking, temporär) */
+.support-inline-notice {
+	margin: 8px 0 0;
+	padding: 6px 40px 6px 12px;
+	font-size: 13px;
+	position: relative;
+}
+
+.support-inline-notice p {
+	margin: 0;
+	padding: 0;
+}
 .ticket-priority-0:before {
-	color:gray;
+	color: gray;
 }
 .ticket-priority-1:before {
 	color:green;

@@ -166,6 +166,30 @@ class PSource_Support_Tickets_Table extends WP_List_Table {
         return psource_support_get_translated_date( $item->ticket_updated ); 
     }
 
+    function column_waiting( $item ) {
+        if ( 5 === (int) $item->ticket_status ) {
+            return '<span class="ticket-waiting-closed">&mdash;</span>';
+        }
+
+        $updated_ts = strtotime( $item->ticket_updated );
+        if ( ! $updated_ts ) {
+            return '&mdash;';
+        }
+
+        $diff = current_time( 'timestamp', true ) - $updated_ts;
+        $human = human_time_diff( $updated_ts, current_time( 'timestamp', true ) );
+
+        if ( $diff < 4 * HOUR_IN_SECONDS ) {
+            $class = 'ticket-waiting-ok';
+        } elseif ( $diff < DAY_IN_SECONDS ) {
+            $class = 'ticket-waiting-warning';
+        } else {
+            $class = 'ticket-waiting-overdue';
+        }
+
+        return '<span class="ticket-waiting ' . $class . '">' . esc_html( $human ) . '</span>';
+    }
+
     function column_replies( $item ) {
         return $item->num_replies;
     }
@@ -181,7 +205,8 @@ class PSource_Support_Tickets_Table extends WP_List_Table {
             'category'  => __( 'Kategorie', 'psource-support' ),
             'staff'     => __( 'Mitarbeiter', 'psource-support' ),
             'submitted' => __( 'Eingereicht von', 'psource-support' ),
-            'replies' => __( 'Antwort Nr.', 'psource-support' ),
+            'replies'   => __( 'Antwort Nr.', 'psource-support' ),
+            'waiting'   => __( 'Warte seit', 'psource-support' ),
             'updated'   => __( 'Letzte Aktualisierung (GMT)', 'psource-support' )
         );
 
@@ -199,7 +224,8 @@ class PSource_Support_Tickets_Table extends WP_List_Table {
             'staff'         => array( 'admin_id', false ),
             'category'      => array( 'cat_id', false ),
             'replies'       => array( 'num_replies', false ),
-            'submitted'       => array( 'blog_id', false ),
+            'submitted'     => array( 'blog_id', false ),
+            'waiting'       => array( 'ticket_updated', true ),
             'updated'       => array( 'ticket_updated', true )
         );
     }
@@ -217,10 +243,28 @@ class PSource_Support_Tickets_Table extends WP_List_Table {
                 'selected' => isset( $_GET['priority'] ) ? absint( $_GET['priority'] ) : null
             );
 
+			$assignment = isset( $_GET['assignment'] ) ? sanitize_key( wp_unslash( $_GET['assignment'] ) ) : '';
+			$ticket_status = isset( $_GET['ticket_status'] ) ? absint( $_GET['ticket_status'] ) : '';
+
             ?>
                 <div class="alignleft actions">
                     <?php psource_support_ticket_categories_dropdown( $cat_filter_args ); ?>
                     <?php psource_support_priority_dropdown( $priority_filter_args ); ?>
+					<select name="assignment" id="ticket-assignment">
+						<option value=""><?php _e( 'Alle Zuweisungen', 'psource-support' ); ?></option>
+						<option value="mine" <?php selected( $assignment, 'mine' ); ?>><?php _e( 'Mir zugewiesen', 'psource-support' ); ?></option>
+						<option value="unassigned" <?php selected( $assignment, 'unassigned' ); ?>><?php _e( 'Nicht zugewiesen', 'psource-support' ); ?></option>
+						<option value="assigned" <?php selected( $assignment, 'assigned' ); ?>><?php _e( 'Mit Bearbeiter', 'psource-support' ); ?></option>
+					</select>
+					<select name="ticket-status" id="ticket-status-filter">
+						<option value=""><?php _e( 'Alle Statusdetails', 'psource-support' ); ?></option>
+						<option value="0" <?php selected( $ticket_status, 0 ); ?>><?php _e( 'Neu', 'psource-support' ); ?></option>
+						<option value="1" <?php selected( $ticket_status, 1 ); ?>><?php _e( 'In Bearbeitung', 'psource-support' ); ?></option>
+						<option value="2" <?php selected( $ticket_status, 2 ); ?>><?php _e( 'Warten auf Benutzer', 'psource-support' ); ?></option>
+						<option value="3" <?php selected( $ticket_status, 3 ); ?>><?php _e( 'Warten auf Admin', 'psource-support' ); ?></option>
+						<option value="4" <?php selected( $ticket_status, 4 ); ?>><?php _e( 'Stockt', 'psource-support' ); ?></option>
+						<option value="5" <?php selected( $ticket_status, 5 ); ?>><?php _e( 'Geschlossen', 'psource-support' ); ?></option>
+					</select>
                     <input type="submit" name="filter_action" id="ticket-query-submit" class="button" value="<?php echo esc_attr( 'Filter', 'psource-support' ); ?>">     
                 </div>
         <?php
@@ -311,13 +355,26 @@ class PSource_Support_Tickets_Table extends WP_List_Table {
     function single_row( $item ) {
         static $row_class = '';
 
-        $row_class = ( $row_class == '' ? ' class="alternate"' : '' );
+        $row_class = ( $row_class == '' ? ' alternate' : '' );
+
+        $extra_classes = '';
+        if ( 5 !== (int) $item->ticket_status ) {
+            $updated_ts = strtotime( $item->ticket_updated );
+            if ( $updated_ts ) {
+                $diff = current_time( 'timestamp', true ) - $updated_ts;
+                if ( $diff >= DAY_IN_SECONDS ) {
+                    $extra_classes .= ' ticket-row-overdue';
+                } elseif ( $diff >= 4 * HOUR_IN_SECONDS ) {
+                    $extra_classes .= ' ticket-row-warning';
+                }
+            }
+        }
 
         $background = '';
         if ( ! $item->view_by_superadmin && psource_support_current_user_can( 'manage_options' ) )
-            $background .= 'style="background-color:#e8f3b9" ';
+            $background = 'style="background-color:#e8f3b9" ';
 
-        echo '<tr ' . $background . $row_class . '>';
+        echo '<tr ' . $background . 'class="' . trim( $row_class . $extra_classes ) . '">';
         echo $this->single_row_columns( $item );
         echo '</tr>';
     }
