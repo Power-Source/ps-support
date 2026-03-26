@@ -2,7 +2,7 @@
 /*
 Plugin Name: PS Support System
 Plugin URI: https://cp-psource.github.io/ps-support/
-Description: Richte auf jeder ClassicPress-Seite ein fantastisches Support-Ticket-System mit häufig gestellten Fragen ein.
+Description: Richte auf jeder ClassicPress-Seite ein fantastisches Support-Ticket-System mit häufig gestellten Fragen ein, oder biete Deinen Usern einen Netzwerkweiten HelpDesk
 Author: PSOURCE
 Network: true
 Version: 1.0.0

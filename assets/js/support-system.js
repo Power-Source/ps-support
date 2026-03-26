@@ -210,7 +210,8 @@
 				var data = {
 					vote: vote,
 					faq_id: faq_id,
-					action: 'vote_faq_question'
+					action: 'vote_faq_question',
+					nonce: support_system_strings.voteFaqNonce || ''
 				};
 			
 				$.post(support_system_strings.ajaxurl, data, function(response) {

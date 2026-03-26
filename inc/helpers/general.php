@@ -294,7 +294,8 @@ function psource_support_register_main_script() {
 	wp_register_script( 'support-system', PSOURCE_SUPPORT_PLUGIN_URL . 'assets/js/support-system' . $suffix . '.js', array( 'jquery' ), psource_support_get_version(), true );
 
 	$l10n = array(
-		'ajaxurl' => admin_url( 'admin-ajax.php' )
+		'ajaxurl' => admin_url( 'admin-ajax.php' ),
+		'voteFaqNonce' => wp_create_nonce( 'support-system-vote-faq' ),
 	);
 	wp_localize_script( 'support-system', 'support_system_strings', $l10n );
 }

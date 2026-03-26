@@ -70,7 +70,10 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 		if ( ! empty( $_REQUEST['s'] ) )
 			$filters['s'] = stripslashes_deep( $_REQUEST['s'] );
 
-		$url = $_SERVER['REQUEST_URI'];
+		$url = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+		if ( '' === $url ) {
+			$url = $this->get_menu_url();
+		}
 		foreach ( $filters as $key => $value ) {
 			if ( $value === false )
 				$url = remove_query_arg( $key, $url );
@@ -78,7 +81,7 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 				$url = add_query_arg( $key, $value, $url );
 		}
 
-		wp_redirect( $url );
+		wp_safe_redirect( $url );
 		exit();
 	}
 
