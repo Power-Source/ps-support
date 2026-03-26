@@ -2,6 +2,23 @@
 
 class PSource_Support_Welcome_Menu extends PSource_Support_Admin_Menu {
 
+	protected function has_welcome_flag() {
+		if ( is_multisite() ) {
+			return (bool) get_site_transient( 'psource_support_welcome' );
+		}
+
+		return (bool) get_transient( 'psource_support_welcome' );
+	}
+
+	protected function clear_welcome_flag() {
+		if ( is_multisite() ) {
+			delete_site_transient( 'psource_support_welcome' );
+			return;
+		}
+
+		delete_transient( 'psource_support_welcome' );
+	}
+
 	public function add_menu() {		
 		$this->menu_title = sprintf( __( 'Willkommen beim Support System %s', 'psource-support' ), psource_support_get_version() );
 		$this->page_id = add_dashboard_page( 
@@ -47,7 +64,7 @@ class PSource_Support_Welcome_Menu extends PSource_Support_Admin_Menu {
 	}
 
 	public function redirect_to_here() {
-	    if ( ! get_transient( 'psource_support_welcome' ) ) {
+	    if ( ! $this->has_welcome_flag() ) {
 			return;
 	    }
 
@@ -56,10 +73,16 @@ class PSource_Support_Welcome_Menu extends PSource_Support_Admin_Menu {
 	    elseif ( ! is_multisite() && ! current_user_can( 'manage_options' ) )
 	    	return;
 
-		delete_transient( 'psource_support_welcome' );
+		$current_page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		if ( $current_page === $this->slug ) {
+			$this->clear_welcome_flag();
+			return;
+		}
+
+		$this->clear_welcome_flag();
 
 		$url = is_multisite() ? network_admin_url( 'index.php?page=' . $this->slug ) : admin_url( 'index.php?page=' . $this->slug );
-		wp_redirect( $url );
+		wp_safe_redirect( $url );
 		exit;
 	}
 

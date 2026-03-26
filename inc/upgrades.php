@@ -45,65 +45,78 @@ function psource_support_group_settings_upgrade() {
 function psource_support_check_for_upgrades() {
 
 	$saved_version = get_site_option( 'psource_support_version', false );
+	$needs_version_upgrade = ( ! $saved_version || version_compare( $saved_version, PSOURCE_SUPPORT_PLUGIN_VERSION ) < 0 );
+
+	global $wpdb;
+	$labels_table = $wpdb->base_prefix . 'support_labels';
+	$labels_table_exists = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $labels_table ) );
+	$needs_schema_fix = ! $labels_table_exists;
 
 	if ( $saved_version === false ) {
 		psource_support()->activate();
+		$saved_version = get_site_option( 'psource_support_version', false );
+		$needs_version_upgrade = ( ! $saved_version || version_compare( $saved_version, PSOURCE_SUPPORT_PLUGIN_VERSION ) < 0 );
 	}
 
-	// Upgrade-Routinen immer ausführen – der äußere Versionscheck wird bewusst nicht
-	// verwendet, damit die Logik auch greift wenn der gespeicherte Wert aus einer
-	// anderen Versionsnummer-Reihe stammt (z. B. ältere 2.x-Builds).
+	if ( ! $needs_version_upgrade && ! $needs_schema_fix ) {
+		return;
+	}
+
 	{
 		$model = MU_Support_System_Model::get_instance();
 
-		if ( version_compare( $saved_version, '1.7.2.2' ) < 0 )
+		if ( $needs_version_upgrade && version_compare( $saved_version, '1.7.2.2' ) < 0 )
 			$model->upgrade_1722();
 
-		if ( version_compare( $saved_version, '1.8' ) < 0 )
+		if ( $needs_version_upgrade && version_compare( $saved_version, '1.8' ) < 0 )
 			$model->upgrade_18();
 
-		if ( version_compare( $saved_version, '1.8.1' ) < 0 )
+		if ( $needs_version_upgrade && version_compare( $saved_version, '1.8.1' ) < 0 )
 			$model->upgrade_181();
 
-		if ( version_compare( $saved_version, '1.9.1' ) < 0 ) {
+		if ( $needs_version_upgrade && version_compare( $saved_version, '1.9.1' ) < 0 ) {
 			psource_support_set_new_roles();
 		}
 
-		if ( version_compare( $saved_version, '1.9.6' ) < 0 ) {
+		if ( $needs_version_upgrade && version_compare( $saved_version, '1.9.6' ) < 0 ) {
 			$model->upgrade_196();
 		}
 
-		if ( version_compare( $saved_version, '1.9.8' ) < 0 ) {
+		if ( $needs_version_upgrade && version_compare( $saved_version, '1.9.8' ) < 0 ) {
 			$model->upgrade_198();
 		}
 
-		if ( version_compare( $saved_version, '1.9.8.1' ) < 0 ) {
+		if ( $needs_version_upgrade && version_compare( $saved_version, '1.9.8.1' ) < 0 ) {
 			$model->upgrade_1981();
 		}
 
-		if ( version_compare( $saved_version, '2.0beta4' ) < 0 ) {
+		if ( $needs_version_upgrade && version_compare( $saved_version, '2.0beta4' ) < 0 ) {
 			psource_support_upgrade_20beta4();
 		}
 
-		if ( version_compare( $saved_version, '2.1' ) < 0 ) {
+		if ( $needs_version_upgrade && version_compare( $saved_version, '2.1' ) < 0 ) {
 			psource_support()->model->create_tables();
 		}
 
-		if ( version_compare( $saved_version, '2.1.8' ) < 0 ) {
+		if ( $needs_version_upgrade && version_compare( $saved_version, '2.1.8' ) < 0 ) {
 			psource_support()->model->create_tables();
 		}
 
 		// Sicherheitsnetz: neue Tabellen anlegen falls sie fehlen (unabhängig von Versionslogik,
 		// da der gespeicherte Versionsstand aus einer früheren Codebase stammen kann).
-		global $wpdb;
-		if ( ! $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->base_prefix . 'support_labels' ) ) ) {
+		if ( $needs_schema_fix ) {
 			psource_support()->model->create_labels_table();
 			psource_support()->model->create_ticket_labels_table();
 		}
 
-		update_site_option( 'psource_support_version', PSOURCE_SUPPORT_PLUGIN_VERSION );
-
-		set_transient( 'psource_support_welcome', true );		
+		if ( $needs_version_upgrade ) {
+			update_site_option( 'psource_support_version', PSOURCE_SUPPORT_PLUGIN_VERSION );
+			if ( is_multisite() ) {
+				set_site_transient( 'psource_support_welcome', true );
+			} else {
+				set_transient( 'psource_support_welcome', true );
+			}
+		}
 	}
 
 }
