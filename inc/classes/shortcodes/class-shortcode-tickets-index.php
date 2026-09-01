@@ -21,7 +21,7 @@ class PSource_Support_Tickets_Index_Shortcode extends PSource_Support_Shortcode 
 
 		$ticket_id = absint( $_POST['ticket_id'] );
 		$ticket = psource_support_get_ticket( $ticket_id );
-		if ( ! $ticket ) {
+		if ( ! psource_support_ticket_is_available_on_current_frontend( $ticket ) ) {
 			return;
 		}
 
@@ -55,13 +55,13 @@ class PSource_Support_Tickets_Index_Shortcode extends PSource_Support_Shortcode 
 	}
 
 	protected function maybe_handle_ticket_close_update() {
-		if ( ! isset( $_POST['submit-close-ticket'] ) || ! psource_support_current_user_can( 'close_ticket', psource_support_get_the_ticket_id() ) ) {
+		if ( ! isset( $_POST['submit-close-ticket'] ) ) {
 			return;
 		}
 
 		$ticket_id = absint( $_POST['ticket_id'] );
 		$ticket = psource_support_get_ticket( $ticket_id );
-		if ( ! $ticket ) {
+		if ( ! psource_support_ticket_is_available_on_current_frontend( $ticket ) || ! psource_support_current_user_can( 'close_ticket', $ticket_id ) ) {
 			return;
 		}
 
@@ -98,7 +98,7 @@ class PSource_Support_Tickets_Index_Shortcode extends PSource_Support_Shortcode 
 			wp_die( __( 'Die Antwortnachricht darf nicht leer sein', 'psource-support' ) );
 
 		$ticket = psource_support_get_ticket( $ticket_id );
-		if ( ! $ticket )
+		if ( ! psource_support_ticket_is_available_on_current_frontend( $ticket ) )
 			wp_die( __( 'Das Ticket existiert nicht', 'psource-support' ) );
 
 		if ( $user_id != get_current_user_id() )

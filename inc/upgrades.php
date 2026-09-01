@@ -51,6 +51,14 @@ function psource_support_check_for_upgrades() {
 	$labels_table = $wpdb->base_prefix . 'support_labels';
 	$labels_table_exists = (bool) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $labels_table ) );
 	$needs_schema_fix = ! $labels_table_exists;
+	$faq_blog_column = $wpdb->get_var( "SHOW COLUMNS FROM {$wpdb->base_prefix}support_faq LIKE 'blog_id'" );
+	$faq_category_blog_column = $wpdb->get_var( "SHOW COLUMNS FROM {$wpdb->base_prefix}support_faq_cats LIKE 'blog_id'" );
+	$ticket_category_blog_column = $wpdb->get_var( "SHOW COLUMNS FROM {$wpdb->base_prefix}support_tickets_cats LIKE 'blog_id'" );
+	$legacy_ticket_category_index = $wpdb->get_var( "SHOW INDEX FROM {$wpdb->base_prefix}support_tickets_cats WHERE Key_name = 'cat_name'" );
+	$faq_default_column = $wpdb->get_row( "SHOW COLUMNS FROM {$wpdb->base_prefix}support_faq_cats LIKE 'defcat'" );
+	$ticket_default_column = $wpdb->get_row( "SHOW COLUMNS FROM {$wpdb->base_prefix}support_tickets_cats LIKE 'defcat'" );
+	$needs_default_enum_fix = ! $faq_default_column || false === strpos( $faq_default_column->Type, "'2'" ) || ! $ticket_default_column || false === strpos( $ticket_default_column->Type, "'2'" );
+	$needs_blog_isolation_schema = ! $faq_blog_column || ! $faq_category_blog_column || ! $ticket_category_blog_column || $legacy_ticket_category_index || $needs_default_enum_fix;
 
 	if ( $saved_version === false ) {
 		psource_support()->activate();
@@ -58,7 +66,7 @@ function psource_support_check_for_upgrades() {
 		$needs_version_upgrade = ( ! $saved_version || version_compare( $saved_version, PSOURCE_SUPPORT_PLUGIN_VERSION ) < 0 );
 	}
 
-	if ( ! $needs_version_upgrade && ! $needs_schema_fix ) {
+	if ( ! $needs_version_upgrade && ! $needs_schema_fix && ! $needs_blog_isolation_schema ) {
 		return;
 	}
 
@@ -107,6 +115,10 @@ function psource_support_check_for_upgrades() {
 		if ( $needs_schema_fix ) {
 			psource_support()->model->create_labels_table();
 			psource_support()->model->create_ticket_labels_table();
+		}
+
+		if ( $needs_blog_isolation_schema ) {
+			$model->upgrade_blog_isolation();
 		}
 
 		if ( $needs_version_upgrade ) {

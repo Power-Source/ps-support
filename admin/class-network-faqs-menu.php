@@ -13,11 +13,12 @@ class PSource_Support_Network_FAQ_Menu extends PSource_Support_Admin_Menu {
 
 
 	public function add_menu() {		
+		$menu_name = $this->network ? psource_support_get_setting( 'psource_support_network_faq_name' ) : __( 'FAQ', 'psource-support' );
 		parent::add_submenu_page(
 			'ticket-manager',
-			__( 'FAQ Manager', 'psource-support' ),
-			__( 'FAQ Manager', 'psource-support' ), 
-			is_multisite() ? 'manage_network' : 'manage_options'
+			$menu_name,
+			$menu_name,
+			$this->network ? 'manage_network' : 'manage_options'
 		);
 
 		add_action( 'load-' . $this->page_id, array( $this, 'set_filters' ) );

@@ -25,6 +25,85 @@ class PSource_Support_Admin_Support_Menu extends PSource_Support_Parent_Support_
 				"admin.php?page=$this->slug&action=add" 
 			);
 		}
+
+		if ( psource_support_subsite_settings_available() && current_user_can( 'manage_options' ) ) {
+			$page_id = add_submenu_page(
+				$this->slug,
+				__( 'Support-Einstellungen', 'psource-support' ),
+				__( 'Support-Einstellungen', 'psource-support' ),
+				'manage_options',
+				'psource-support-site-settings',
+				array( $this, 'render_site_settings' )
+			);
+			add_action( 'load-' . $page_id, array( $this, 'save_site_settings' ) );
+		}
+	}
+
+	public function render_site_settings() {
+		$blog_id = get_current_blog_id();
+		$config = psource_support_get_subsite_front_settings( $blog_id );
+		if ( ! $config ) {
+			$config = array(
+				'active' => false, 'forced_by' => array(), 'forced_features' => array(), 'tickets_enabled' => false, 'faqs_enabled' => false,
+				'support_page_id' => 0, 'new_ticket_page_id' => 0, 'faqs_page_id' => 0,
+				'staff_roles' => array(),
+			);
+		}
+		$page_dropdowns = array();
+		foreach ( array( 'support_page_id', 'new_ticket_page_id', 'faqs_page_id' ) as $page_key ) {
+			$page_dropdowns[ $page_key ] = wp_dropdown_pages( array(
+				'selected' => absint( $config[ $page_key ] ), 'show_option_none' => __( '-- Automatisch erstellen --', 'psource-support' ),
+				'name' => $page_key, 'echo' => false,
+			) );
+		}
+		$roles = MU_Support_System::get_roles();
+		include( 'views/admin-support-settings.php' );
+	}
+
+	public function save_site_settings() {
+		if ( empty( $_POST['save-site-support-settings'] ) ) {
+			return;
+		}
+		check_admin_referer( 'save-site-support-settings' );
+		if ( ! current_user_can( 'manage_options' ) || ! psource_support_subsite_settings_available() ) {
+			wp_die( esc_html__( 'Nicht ausreichend Berechtigungen.', 'psource-support' ) );
+		}
+
+		$blog_id = get_current_blog_id();
+		$all = (array) psource_support_get_setting( 'psource_support_subsite_pages' );
+		$previous = isset( $all[ $blog_id ] ) ? (array) $all[ $blog_id ] : array();
+		$forced_by = isset( $previous['forced_by'] ) ? (array) $previous['forced_by'] : array();
+		$forced_features = isset( $previous['forced_features'] ) ? (array) $previous['forced_features'] : array();
+		$forced_tickets = false;
+		$forced_faqs = false;
+		foreach ( $forced_features as $features ) {
+			$forced_tickets = $forced_tickets || ! empty( $features['tickets'] );
+			$forced_faqs = $forced_faqs || ! empty( $features['faqs'] );
+		}
+		$config = array(
+			'active' => psource_support_get_setting( 'psource_support_allow_subsite_support' ) && ! empty( $_POST['active'] ),
+			'forced_by' => $forced_by,
+			'forced_features' => $forced_features,
+			'tickets_enabled' => $forced_tickets || ! empty( $_POST['tickets_enabled'] ),
+			'faqs_enabled' => $forced_faqs || ! empty( $_POST['faqs_enabled'] ),
+			'support_page_id' => isset( $_POST['support_page_id'] ) ? absint( $_POST['support_page_id'] ) : 0,
+			'new_ticket_page_id' => isset( $_POST['new_ticket_page_id'] ) ? absint( $_POST['new_ticket_page_id'] ) : 0,
+			'faqs_page_id' => isset( $_POST['faqs_page_id'] ) ? absint( $_POST['faqs_page_id'] ) : 0,
+			'staff_roles' => array_values( array_filter( array_map( 'sanitize_key', isset( $_POST['staff_roles'] ) ? (array) $_POST['staff_roles'] : array() ) ) ),
+		);
+		if ( ! empty( $_POST['create_pages'] ) ) {
+			if ( $config['tickets_enabled'] ) {
+				$config['support_page_id'] = psource_support_ensure_subsite_page( $config['support_page_id'], __( 'Support', 'psource-support' ), '[support-system-tickets-index]' );
+				$config['new_ticket_page_id'] = psource_support_ensure_subsite_page( $config['new_ticket_page_id'], __( 'Supportanfrage', 'psource-support' ), '[support-system-submit-ticket-form blog_field="false"]' );
+			}
+			if ( $config['faqs_enabled'] ) {
+				$config['faqs_page_id'] = psource_support_ensure_subsite_page( $config['faqs_page_id'], __( 'Häufige Fragen', 'psource-support' ), '[support-system-faqs]' );
+			}
+		}
+		$all[ $blog_id ] = $config;
+		psource_support_update_setting( 'psource_support_subsite_pages', $all );
+		wp_safe_redirect( add_query_arg( 'updated', 'true', admin_url( 'admin.php?page=psource-support-site-settings' ) ) );
+		exit;
 	}
 
 	public function set_filters() {

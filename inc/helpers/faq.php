@@ -38,7 +38,7 @@ function psource_support_delete_faq_row( $faq_id ) {
 }
 
 function psource_support_sanitize_faq_fields( $faq ) {
-	$int_fields = array( 'faq_id', 'site_id', 'cat_id', 'help_views', 'help_count', 'help_yes', 
+	$int_fields = array( 'faq_id', 'site_id', 'blog_id', 'cat_id', 'help_views', 'help_count', 'help_yes',
 		'help_no' );
 
 	foreach ( get_object_vars( $faq ) as $name => $value ) {
@@ -76,7 +76,9 @@ function psource_support_get_faqs( $args = array() ) {
 		'per_page' => get_option( 'posts_per_page' ),
 		'page' => 1,
 		'category' => false,
+		'category_in' => false,
 		'site_id' => $current_site_id,
+		'blog_id' => psource_support_get_data_blog_id(),
 		'orderby' => 'faq_id',
 		'order' => 'asc',
 		's' => false,
@@ -86,7 +88,9 @@ function psource_support_get_faqs( $args = array() ) {
 	$per_page = $args['per_page'];
 	$page     = $args['page'];
 	$category = $args['category'];
+	$category_in = $args['category_in'];
 	$site_id  = $args['site_id'];
+	$blog_id  = absint( $args['blog_id'] );
 	$orderby  = $args['orderby'];
 	$order    = $args['order'];
 	$s        = $args['s'];
@@ -101,6 +105,7 @@ function psource_support_get_faqs( $args = array() ) {
 		$where[] = $wpdb->prepare( "site_id = %d", $site_id );
 	else
 		$where[] = $wpdb->prepare( "site_id = %d", $current_site_id );
+	$where[] = $wpdb->prepare( "blog_id = %d", $blog_id );
 
 	// Search
 	if ( $s ) {
@@ -110,6 +115,11 @@ function psource_support_get_faqs( $args = array() ) {
 
 	if ( $category )
 		$where[] = $wpdb->prepare( "cat_id = %d", $category );
+	elseif ( ! empty( $category_in ) ) {
+		$category_in = array_values( array_filter( array_map( 'absint', (array) $category_in ) ) );
+		if ( $category_in )
+			$where[] = 'cat_id IN (' . implode( ',', $category_in ) . ')';
+	}
 
 	$order_query = '';
 	$order = strtoupper( $order );
@@ -168,6 +178,7 @@ function psource_support_insert_faq( $args = array() ) {
 
 	$defaults = array(
 		'site_id' => $current_site_id,
+		'blog_id' => psource_support_get_data_blog_id(),
 		'cat_id' => psource_support_get_default_faq_category()->cat_id,
 		'question' => '',
 		'answer' => '',
@@ -186,6 +197,8 @@ function psource_support_insert_faq( $args = array() ) {
 	// SITE ID
 	$insert['site_id'] = $args['site_id']; 
 	$insert_wildcards[] = '%d'; 
+	$insert['blog_id'] = absint( $args['blog_id'] );
+	$insert_wildcards[] = '%d';
 
 	// CATEGORY
 	$category = psource_support_get_faq_category( absint( $args['cat_id'] ) );
@@ -228,7 +241,7 @@ function psource_support_update_faq( $faq_id, $args ) {
 	if ( ! $faq )
 		return false;
 
-	$fields = array( 'site_id' => '%d', 'cat_id' => '%d', 'question' => '%s', 'answer' => '%s', 'help_views' => '%d', 'help_count' => '%d', 
+	$fields = array( 'site_id' => '%d', 'blog_id' => '%d', 'cat_id' => '%d', 'question' => '%s', 'answer' => '%s', 'help_views' => '%d', 'help_count' => '%d',
 		'help_yes' => '%d', 'help_no' => '%d' );
 
 	$update = array();

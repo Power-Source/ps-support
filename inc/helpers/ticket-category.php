@@ -10,7 +10,7 @@ function psource_support_get_ticket_category_rows( $where, $order = '', $limit =
 	if ( $count ) {
 		return $wpdb->get_var( "SELECT COUNT(cat_id) FROM $table $where" );
 	}
-	return $wpdb->get_results( "SELECT cat_id, cat_name, defcat, user_id FROM $table $where $order $limit" );
+	return $wpdb->get_results( "SELECT cat_id, site_id, blog_id, cat_name, defcat, user_id FROM $table $where $order $limit" );
 }
 
 function psource_support_insert_ticket_category_row( $insert ) {
@@ -18,7 +18,7 @@ function psource_support_insert_ticket_category_row( $insert ) {
 	$res = $wpdb->insert(
 		psource_support_get_ticket_category_table(),
 		$insert,
-		array( '%s', '%d', '%d' )
+		array( '%s', '%d', '%d', '%d' )
 	);
 	return $res ? $wpdb->insert_id : false;
 }
@@ -42,7 +42,7 @@ function psource_support_delete_ticket_category_row( $cat_id ) {
 }
 
 function psource_support_sanitize_ticket_category_fields( $cat ) {
-	$int_fields = array( 'cat_id', 'user_id', 'site_id' );
+	$int_fields = array( 'cat_id', 'user_id', 'site_id', 'blog_id' );
 
 	foreach ( get_object_vars( $cat ) as $name => $value ) {
 		if ( in_array( $name, $int_fields ) )
@@ -71,7 +71,8 @@ function psource_support_get_ticket_categories( $args = array() ) {
 		'per_page' => -1,
 		'count' => false,
 		'page' => 1,
-		'defcat' => null
+		'defcat' => null,
+		'blog_id' => psource_support_get_data_blog_id(),
 	);
 
 	$args = wp_parse_args( $args, $defaults );
@@ -81,12 +82,14 @@ function psource_support_get_ticket_categories( $args = array() ) {
 	$count    = $args['count'];
 	$page     = $args['page'];
 	$defcat   = $args['defcat'];
+	$blog_id  = absint( $args['blog_id'] );
 
 	$current_site_id = ! empty ( $current_site ) ? $current_site->id : 1;
 
 	// WHERE
 	$where = array();
 	$where[] = $wpdb->prepare( "site_id = %d", $current_site_id );
+	$where[] = $wpdb->prepare( "blog_id = %d", $blog_id );
 
 	if ( $defcat !== null ) {
 		// This is an enum field type!!
@@ -189,6 +192,7 @@ function psource_support_insert_ticket_category( $name, $user_id = false ) {
 	$cat_id = psource_support_insert_ticket_category_row( array(
 		'cat_name' => $name,
 		'site_id'  => $current_site_id,
+		'blog_id'  => psource_support_get_data_blog_id(),
 		'user_id'  => $user_id,
 	) );
 
@@ -247,7 +251,8 @@ function psource_support_update_ticket_category( $ticket_category_id, $args = ar
 }
 
 function psource_support_get_default_ticket_category() {
-	$default_category = wp_cache_get( 'support_system_default_ticket_category', 'support_system_ticket_categories' );
+	$cache_key = 'support_system_default_ticket_category_' . psource_support_get_data_blog_id();
+	$default_category = wp_cache_get( $cache_key, 'support_system_ticket_categories' );
 
 	if ( $default_category )
 		return $default_category;
@@ -255,11 +260,18 @@ function psource_support_get_default_ticket_category() {
 	$results = psource_support_get_ticket_categories( array( 'per_page' => 1, 'defcat' => 1 ) );
 
 	if ( isset( $results[0] ) ) {
-		wp_cache_set( 'support_system_default_ticket_category', $results[0], 'support_system_ticket_categories' );
+		wp_cache_set( $cache_key, $results[0], 'support_system_ticket_categories' );
 		return $results[0];
 	}
 
-
+	$default_name = __( 'Allgemein', 'psource-support' );
+	psource_support_insert_ticket_category( $default_name, 0 );
+	$default_category = psource_support_get_ticket_category( $default_name );
+	if ( $default_category ) {
+		psource_support_update_ticket_category_row( $default_category->cat_id, array( 'defcat' => 2 ), array( '%d' ) );
+		psource_support_clean_ticket_category_cache( $default_category->cat_id );
+		return psource_support_get_ticket_category( $default_category->cat_id );
+	}
 
 	return false;
 }
@@ -272,8 +284,13 @@ function psource_support_set_default_ticket_category( $ticket_category_id ) {
 		return false;
 
 	$default_category = psource_support_get_default_ticket_category();
-	if ( $default_category )
-		$wpdb->query( "UPDATE " . psource_support_get_ticket_category_table() . " SET defcat = 1" ); // enum type field!!
+	if ( $default_category ) {
+		$wpdb->query( $wpdb->prepare(
+			"UPDATE " . psource_support_get_ticket_category_table() . " SET defcat = 1 WHERE site_id = %d AND blog_id = %d",
+			$ticket_category->site_id,
+			$ticket_category->blog_id
+		) );
+	}
 
 	$result = psource_support_update_ticket_category_row(
 		$ticket_category_id,
@@ -281,7 +298,7 @@ function psource_support_set_default_ticket_category( $ticket_category_id ) {
 		array( '%d' )
 	);
 
-	wp_cache_delete( 'support_system_default_ticket_category', 'support_system_ticket_categories' );
+	wp_cache_delete( 'support_system_default_ticket_category_' . $ticket_category->blog_id, 'support_system_ticket_categories' );
 	psource_support_clean_ticket_category_cache( $ticket_category_id );
 	psource_support_clean_ticket_category_cache( $default_category->cat_id );
 

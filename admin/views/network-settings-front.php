@@ -34,7 +34,6 @@
 				<?php $this->render_row( __( 'FAQs Seite', 'psource-support' ), $faqs_pages_dropdown ); ?>
 			<?php endif; ?>
 		</table>
-		
 
 	</div>
 

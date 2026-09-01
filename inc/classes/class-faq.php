@@ -7,6 +7,8 @@ class PSource_Support_FAQ {
 
 	public $site_id = 0;
 
+	public $blog_id = 0;
+
 	public $cat_id = 0;
 
 	public $question = '';
@@ -40,6 +42,10 @@ class PSource_Support_FAQ {
 
 		$_faq = wp_cache_get( $faq_id, 'support_system_faqs' );
 		$current_site_id = ! empty ( $current_site ) ? $current_site->id : 1;
+		$blog_id = psource_support_get_data_blog_id();
+		if ( $_faq && (int) $_faq->blog_id !== $blog_id ) {
+			$_faq = false;
+		}
 
 		if ( ! $_faq ) {
 			$_faq = $wpdb->get_row( 
@@ -47,9 +53,11 @@ class PSource_Support_FAQ {
 					"SELECT * FROM $faq_table
 					WHERE faq_id = %d
 					AND site_id = %d
+					AND blog_id = %d
 					LIMIT 1",
 					$faq_id,
-					$current_site_id
+					$current_site_id,
+					$blog_id
 				)
 			);	
 

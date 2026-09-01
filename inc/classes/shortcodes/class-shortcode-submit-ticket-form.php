@@ -77,6 +77,10 @@ class PSource_Support_Submit_Ticket_Form_Shortcode extends PSource_Support_Short
 	}
 
 	protected function get_selected_blog_id( $user_id, $default_blog_id ) {
+		if ( psource_support_is_subsite_frontend() ) {
+			return get_current_blog_id();
+		}
+
 		if ( empty( $_POST['support-system-ticket-blog'] ) ) {
 			return $default_blog_id;
 		}
@@ -115,6 +119,9 @@ class PSource_Support_Submit_Ticket_Form_Shortcode extends PSource_Support_Short
 		);
 
 		$atts = wp_parse_args( $atts, $defaults );
+		if ( psource_support_is_subsite_frontend() ) {
+			$atts['blog_field'] = false;
+		}
 		extract( $atts );
 
 		$blog_field = (bool)$blog_field;

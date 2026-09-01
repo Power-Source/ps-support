@@ -9,6 +9,8 @@ class PSource_Support_faq_Category {
 	private $defcat = false;
 	
 	public $site_id = 0;
+
+	public $blog_id = 0;
 	
 	public $qcount = 0;
 	
@@ -29,8 +31,12 @@ class PSource_Support_faq_Category {
 			
 			$table = psource_support()->model->faq_cats_table;
 			$current_site_id = ! empty ( $current_site ) ? $current_site->id : 1;
+			$blog_id = psource_support_get_data_blog_id();
 
 			$_cat = wp_cache_get( $faq_id, 'support_system_faq_categories' );
+			if ( $_cat && (int) $_cat->blog_id !== $blog_id ) {
+				$_cat = false;
+			}
 
 			if ( ! $_cat ) {
 				$_cat = $wpdb->get_row( 
@@ -39,9 +45,11 @@ class PSource_Support_faq_Category {
 						FROM $table 
 						WHERE cat_id = %d
 						AND site_id = %d
+						AND blog_id = %d
 						LIMIT 1", 
 						$faq_id,
-						$current_site_id
+						$current_site_id,
+						$blog_id
 					) 
 				);
 
@@ -55,16 +63,19 @@ class PSource_Support_faq_Category {
 			
 			$table = psource_support()->model->faq_cats_table;
 			$current_site_id = ! empty ( $current_site ) ? $current_site->id : 1;
+			$blog_id = psource_support_get_data_blog_id();
 			
 			$_cat = $wpdb->get_row( 
 				$wpdb->prepare(
 					"SELECT *
 					FROM $table 
 					WHERE cat_name = %s
-					AND site_id = %s
+					AND site_id = %d
+					AND blog_id = %d
 					LIMIT 1", 
 					$faq_category,
-					$current_site_id
+					$current_site_id,
+					$blog_id
 				) 
 			);
 

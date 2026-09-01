@@ -9,6 +9,7 @@ class PSource_Support_Admin {
 
 	public function __construct() {
 		$this->includes();
+		new PSource_Support_Network_FAQ_Dashboard_Widget();
 		$this->add_menus();
 	}
 
@@ -30,6 +31,7 @@ class PSource_Support_Admin {
 		// Admin
 		require_once( 'class-admin-support-menu.php' );
 		require_once( 'class-admin-faqs-menu.php' );
+		require_once( 'class-network-faq-dashboard-widget.php' );
 
 		if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
 			require_once( 'inc/ajax.php' );
@@ -101,16 +103,38 @@ class PSource_Support_Admin {
 				 		...
 				 	)
 				 */
-				$menus = apply_filters( 'psource_support_menus', array(
+				$menus = array(
 					'admin_support_menu' => array(
 						'class' => 'PSource_Support_Admin_Support_Menu',
 						'slug' => 'ticket-manager'
 					),
-					'admin_faq_menu' => array(
+				);
+				if ( psource_support_subsite_settings_available() ) {
+					$menus += array(
+					'admin_network_faq_menu' => array(
 						'class' => 'PSource_Support_Admin_FAQ_Menu',
-						'slug' => 'support-faq'
+						'slug' => 'support-network-faq'
+					),
+					'admin_ticket_categories_menu' => array(
+						'class' => 'PSource_Support_Network_Ticket_Categories',
+						'slug' => 'ticket-categories'
+					),
+					'admin_faqs_menu' => array(
+						'class' => 'PSource_Support_Network_FAQ_Menu',
+						'slug' => 'support-faq-manager'
+					),
+					'admin_faq_categories_menu' => array(
+						'class' => 'PSource_Support_Network_FAQ_Categories',
+						'slug' => 'faq-categories'
 					)
-				) );
+					);
+				} else {
+					$menus['admin_faq_menu'] = array(
+						'class' => 'PSource_Support_Admin_FAQ_Menu',
+						'slug' => 'support-faq',
+					);
+				}
+				$menus = apply_filters( 'psource_support_menus', $menus );
 
 			}
 		}

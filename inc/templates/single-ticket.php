@@ -21,6 +21,7 @@
 						<div class="row support-system-ticket-message">
 							<?php echo psource_support_get_the_ticket_message(); ?>
 						</div>
+						<?php do_action( 'psource_support_front_ticket_context', psource_support()->query->ticket ); ?>
 
 						<?php $attachments = psource_support_get_the_ticket_attachments(); ?>
 						<?php if ( ! empty( $attachments ) ): ?>

@@ -102,7 +102,7 @@ Vorhandene Optionen:
 * Datenschutz fuer Tickets
 * erlaubte Rollen fuer Tickets
 * erlaubte Rollen fuer FAQs
-* optionale CRM-Sync-Site-ID in Multisite
+* CRM-Sync aktivieren/deaktivieren und CRM-Site per Suche waehlen; Standard ist der Netzwerk-Hauptblog
 * optionale PS Bloghosting / Pro Sites Einschraenkungen
 
 Die Rechtevergabe ist rollenbasiert. Dabei werden Tickets und FAQs getrennt behandelt. Das ist praktisch, wenn zum Beispiel alle Mitglieder FAQs sehen duerfen, aber nur Kunden oder Redakteure Tickets anlegen sollen.

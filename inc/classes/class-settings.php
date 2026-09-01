@@ -8,6 +8,7 @@ class PSource_Support_Settings {
 		add_filter( 'psource_support_menus', array( $this, 'filter_menus' ) );
 		add_filter( 'support_system_tickets_table_query_args', array( $this, 'filter_admin_tickets_table' ) );
 		add_filter( 'support_system_query_get_tickets_args', array( $this, 'filter_query' ) );
+		add_filter( 'support_system_query_get_faqs_args', array( $this, 'filter_faq_query' ) );
 		add_filter( 'support_system_add_editor_shortcodes', array( $this, 'toggle_editor_shortcode_button' ) );
 		add_filter( 'support_system_front_stylesheet', array( $this, 'set_front_stylesheet' ), 1 );
 	}
@@ -41,6 +42,11 @@ class PSource_Support_Settings {
 		$main_super_admin = ! empty( $super_admins ) ? key( $super_admins ) : false;
 		return apply_filters( 'support_system_default_settings', array(
 			'psource_support_menu_name' => __( 'Support', 'psource-support' ),
+			'psource_support_network_faq_name' => __( 'Netzwerk-FAQ', 'psource-support' ),
+			'psource_support_network_faq_dashboard_enabled' => false,
+			'psource_support_network_faq_dashboard_mode' => 'latest',
+			'psource_support_network_faq_dashboard_count' => 5,
+			'psource_support_network_faq_dashboard_sticky_ids' => array(),
 			'psource_support_from_name' => get_bloginfo( 'blogname' ),
 			'psource_support_from_mail' => get_bloginfo( 'admin_email' ),
 			'psource_support_fetch_imap' => 'disabled',
@@ -56,6 +62,9 @@ class PSource_Support_Settings {
 			'psource_support_create_new_ticket_page' => 0,
 			'psource_support_faqs_page' => 0,
 			'psource_support_blog_id' => false,
+			'psource_support_allow_subsite_support' => false,
+			'psource_support_subsite_pages' => array(),
+			'psource_support_crm_sync_enabled' => true,
 			'psource_support_crm_sync_blog_id' => 0,
 			'psource_support_activate_front' => false,
 			'psource_support_use_default_settings' => true			
@@ -68,6 +77,9 @@ class PSource_Support_Settings {
 
 			if ( isset( $menus['admin_faq_menu'] ) && ! psource_support_current_user_can( 'read_faq' ) ) {
 				unset( $menus['admin_faq_menu'] );
+			}
+			if ( isset( $menus['admin_network_faq_menu'] ) && ! psource_support_current_user_can( 'read_faq' ) ) {
+				unset( $menus['admin_network_faq_menu'] );
 			}
 
 			if ( isset( $menus['admin_support_menu'] ) && ! psource_support_current_user_can( 'read_ticket' ) ) {
@@ -120,8 +132,19 @@ class PSource_Support_Settings {
 
 	public function filter_query( $args ) {
 		$privacy = psource_support_get_setting( 'psource_ticket_privacy' );
+		if ( function_exists( 'psource_support_is_subsite_frontend' ) && psource_support_is_subsite_frontend() ) {
+			$args['blog_id'] = get_current_blog_id();
+		}
 		if ( 'requestor' === $privacy && ! psource_support_current_user_can( 'manage_options' ) )
 			$args['user_in'] = array( get_current_user_id() );
+
+		return $args;
+	}
+
+	public function filter_faq_query( $args ) {
+		if ( psource_support_is_subsite_frontend() ) {
+			$args['blog_id'] = get_current_blog_id();
+		}
 
 		return $args;
 	}

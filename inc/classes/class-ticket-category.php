@@ -7,6 +7,7 @@ class PSource_Support_Ticket_Category {
     private $defcat = false;
     public $user_id = 0;
     public $site_id = 0; // Neue deklarierte Eigenschaft
+	public $blog_id = 0;
 
     public static function get_instance($ticket_category) {
         global $wpdb, $current_site;
@@ -24,8 +25,12 @@ class PSource_Support_Ticket_Category {
 
             $table = psource_support()->model->tickets_cats_table;
             $current_site_id = !empty($current_site) ? $current_site->id : 1;
+            $blog_id = psource_support_get_data_blog_id();
 
             $_cat = wp_cache_get($cat_id, 'support_system_ticket_categories');
+            if ( $_cat && (int) $_cat->blog_id !== $blog_id ) {
+                $_cat = false;
+            }
 
             if (!$_cat) {
                 $_cat = $wpdb->get_row(
@@ -34,9 +39,11 @@ class PSource_Support_Ticket_Category {
 						FROM $table 
 						WHERE cat_id = %d
 						AND site_id = %d
+                        AND blog_id = %d
 						LIMIT 1",
                         $cat_id,
-                        $current_site_id
+                        $current_site_id,
+                        $blog_id
                     )
                 );
 
@@ -48,6 +55,7 @@ class PSource_Support_Ticket_Category {
 
             $table = psource_support()->model->tickets_cats_table;
             $current_site_id = !empty($current_site) ? $current_site->id : 1;
+			$blog_id = psource_support_get_data_blog_id();
 
             $_cat = $wpdb->get_row(
                 $wpdb->prepare(
@@ -55,9 +63,11 @@ class PSource_Support_Ticket_Category {
 					FROM $table 
 					WHERE cat_name = %s
 					AND site_id = %d
+                    AND blog_id = %d
 					LIMIT 1",
                     $ticket_category,
-                    $current_site_id
+                    $current_site_id,
+                    $blog_id
                 )
             );
 

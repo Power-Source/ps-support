@@ -144,7 +144,7 @@ class PSource_Support_Query {
 	public function parse() {
 		$settings = psource_support_get_settings();
 
-		if ( is_multisite() && get_current_blog_id() != $settings['psource_support_blog_id'] )
+		if ( is_multisite() && get_current_blog_id() != $settings['psource_support_blog_id'] && ! psource_support_is_subsite_frontend() )
 			return;
 
 		$post_id = get_the_ID();
@@ -153,9 +153,12 @@ class PSource_Support_Query {
 
 		if ( $ticket_id && psource_support_get_support_page_id() ) {
 			// Single ticket page
-			$this->ticket_id = absint( $ticket_id );
-			$this->is_single_ticket = true;
-			$this->is_support_system = true;
+			$ticket = psource_support_get_ticket( absint( $ticket_id ) );
+			if ( psource_support_ticket_is_available_on_current_frontend( $ticket ) ) {
+				$this->ticket_id = absint( $ticket_id );
+				$this->is_single_ticket = true;
+				$this->is_support_system = true;
+			}
 			
 		}
 		elseif ( $post_id == psource_support_get_support_page_id() ) {

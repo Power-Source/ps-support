@@ -168,10 +168,11 @@ function psource_support_get_available_assignees() {
 	global $wpdb;
 
 	$assignees = array();
-	$sync_blog_id = psource_support_get_crm_sync_blog_id();
+	$crm_sync_enabled = (bool) psource_support_get_setting( 'psource_support_crm_sync_enabled' );
+	$sync_blog_id = $crm_sync_enabled ? psource_support_get_crm_sync_blog_id() : 0;
 	$switched = false;
 
-	if ( is_multisite() && $sync_blog_id && get_current_blog_id() !== $sync_blog_id ) {
+	if ( $crm_sync_enabled && is_multisite() && $sync_blog_id && get_current_blog_id() !== $sync_blog_id ) {
 		switch_to_blog( $sync_blog_id );
 		$switched = true;
 	}
@@ -181,7 +182,7 @@ function psource_support_get_available_assignees() {
 	$agents_exists = (string) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $agents_table ) );
 	$roles_exists = (string) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $roles_table ) );
 
-	if ( $agents_exists === $agents_table && $roles_exists === $roles_table ) {
+	if ( $crm_sync_enabled && $agents_exists === $agents_table && $roles_exists === $roles_table ) {
 		$crm_agents = $wpdb->get_results(
 			"SELECT a.user_id, u.display_name, r.role_name
 			 FROM $agents_table a
@@ -239,16 +240,11 @@ function psource_support_get_crm_sync_blog_id() {
 		return $override_blog_id;
 	}
 
-	$support_blog_id = absint( psource_support_get_setting( 'psource_support_blog_id' ) );
-	if ( $support_blog_id && get_blog_details( $support_blog_id ) ) {
-		return $support_blog_id;
-	}
-
 	if ( function_exists( 'get_main_site_id' ) ) {
-		return (int) get_main_site_id();
+		return (int) get_main_site_id( get_current_network_id() );
 	}
 
-	return 1;
+	return defined( 'BLOG_ID_CURRENT_SITE' ) ? absint( BLOG_ID_CURRENT_SITE ) : 1;
 }
 
 function psource_support_get_errors($setting = null) {

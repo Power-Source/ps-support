@@ -7,8 +7,9 @@ class PSource_Support_Admin_FAQ_Menu extends PSource_Support_Admin_Menu {
 
 	public function add_menu() {
 
-		$menu_title = __( 'FAQ', 'psource-support' );
-		$page_title = __( 'Häufig gestellte Fragen', 'psource-support' );
+		$is_network_faq = is_multisite();
+		$menu_title = $is_network_faq ? psource_support_get_setting( 'psource_support_network_faq_name' ) : __( 'FAQ', 'psource-support' );
+		$page_title = $is_network_faq ? $menu_title : __( 'Häufig gestellte Fragen', 'psource-support' );
 		
 		/**
 		 * Filters the FAQ menu position
@@ -56,12 +57,12 @@ class PSource_Support_Admin_FAQ_Menu extends PSource_Support_Admin_Menu {
 
 
 	public function render_inner_page() {
-		$faq_categories = psource_support_get_faq_categories();
+		$faq_categories = psource_support_get_faq_categories( array( 'blog_id' => 0 ) );
 
 		if ( isset( $_POST['submit-faq-search'] ) && check_admin_referer( 'faq_search' ) ) {
 			$new_faq_categories = array();
 			foreach ( $faq_categories as $key => $item ) {
-				$answers = psource_support_get_faqs( array( 's' => $_POST['faq-s'], 'per_page' => -1, 'category' => $item->cat_id ) );
+				$answers = psource_support_get_faqs( array( 's' => $_POST['faq-s'], 'per_page' => -1, 'category' => $item->cat_id, 'blog_id' => 0 ) );
 				if ( count( $answers ) > 0 ) {
 					$the_faq = $item;
 	            	$the_faq->answers = $answers;
@@ -75,8 +76,8 @@ class PSource_Support_Admin_FAQ_Menu extends PSource_Support_Admin_Menu {
 		}
 		else {
 	    	foreach ( $faq_categories as $key => $item ) {
-	            $faq_categories[ $key ]->faqs = psource_support_count_faqs_on_category( $item->cat_id );
-	            $faq_categories[ $key ]->answers = psource_support_get_faqs( array( 'category' => $item->cat_id ) );
+	            $faq_categories[ $key ]->faqs = psource_support_get_faqs_count( array( 'category' => $item->cat_id, 'blog_id' => 0 ) );
+	            $faq_categories[ $key ]->answers = psource_support_get_faqs( array( 'category' => $item->cat_id, 'blog_id' => 0 ) );
 	        }
 	    }		    
 

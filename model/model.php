@@ -102,6 +102,7 @@ if ( ! class_exists( 'MU_Support_System_Model' ) ) {
 			$sql = "CREATE TABLE $this->faq_table (
 				faq_id bigint(20) unsigned NOT NULL auto_increment,
 				site_id bigint(20) unsigned NOT NULL,
+				blog_id bigint(20) unsigned NOT NULL default '0',
 				cat_id bigint(20) unsigned NOT NULL,
 				question varchar(255) NOT NULL,
 				answer mediumtext NOT NULL,
@@ -110,7 +111,8 @@ if ( ! class_exists( 'MU_Support_System_Model' ) ) {
 				help_yes int(12) unsigned NOT NULL default '0',
 				help_no int(12) unsigned NOT NULL default '0',
 				PRIMARY KEY  (faq_id),
-				KEY site_id (site_id,cat_id)
+				KEY site_blog (site_id,blog_id),
+				KEY category (site_id,blog_id,cat_id)
 			      ) $this->db_charset_collate;";
 
 			dbDelta($sql);
@@ -131,11 +133,13 @@ if ( ! class_exists( 'MU_Support_System_Model' ) ) {
 			$sql = "CREATE TABLE $this->faq_cats_table (
 				cat_id bigint(20) unsigned NOT NULL auto_increment,
 				site_id bigint(20) unsigned NOT NULL,
+				blog_id bigint(20) unsigned NOT NULL default '0',
 				cat_name varchar(255) NOT NULL,
 				qcount smallint(3) unsigned NOT NULL,
-				defcat enum('0','1') NOT NULL default '0',
+				defcat enum('0','1','2') NOT NULL default '0',
 				PRIMARY KEY  (cat_id),
-				KEY site_id (site_id)
+				KEY site_blog (site_id,blog_id),
+				UNIQUE KEY site_blog_name (site_id,blog_id,cat_name)
 			      ) $this->db_charset_collate;";
 
 			dbDelta($sql);
@@ -240,18 +244,35 @@ if ( ! class_exists( 'MU_Support_System_Model' ) ) {
 			$sql = "CREATE TABLE $this->tickets_cats_table (
 				cat_id bigint(20) unsigned NOT NULL auto_increment,
 				site_id bigint(20) unsigned NOT NULL,
+				blog_id bigint(20) unsigned NOT NULL default '0',
 				cat_name varchar(100) NOT NULL,
-				defcat enum('0','1') NOT NULL default '0',
+				defcat enum('0','1','2') NOT NULL default '0',
 				user_id bigint(20) DEFAULT 0,
 				PRIMARY KEY  (cat_id),				
-				KEY site_id (site_id),
-				UNIQUE KEY cat_name (cat_name)
+				KEY site_blog (site_id,blog_id),
+				UNIQUE KEY site_blog_name (site_id,blog_id,cat_name)
 			      ) $this->db_charset_collate;";
 
 			dbDelta($sql);
 
 			$this->fill_tickets_cats_default();
 
+		}
+
+		public function upgrade_blog_isolation() {
+			global $wpdb;
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+			$this->create_faq_table();
+			$this->create_faq_cats_table();
+			$this->create_tickets_cats_table();
+
+			$legacy_ticket_name_index = $wpdb->get_var( "SHOW INDEX FROM $this->tickets_cats_table WHERE Key_name = 'cat_name'" );
+			if ( $legacy_ticket_name_index ) {
+				$wpdb->query( "ALTER TABLE $this->tickets_cats_table DROP INDEX cat_name" );
+			}
+			$wpdb->query( "ALTER TABLE $this->faq_cats_table MODIFY defcat enum('0','1','2') NOT NULL default '0'" );
+			$wpdb->query( "ALTER TABLE $this->tickets_cats_table MODIFY defcat enum('0','1','2') NOT NULL default '0'" );
 		}
 
 		public function drop_tables() {

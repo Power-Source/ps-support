@@ -7,7 +7,7 @@ class PSource_Support_Network_Ticket_Categories extends PSource_Support_Admin_Me
 			'ticket-manager',
 			__( 'Ticketkategorien', 'psource-support' ),
 			__( 'Ticketkategorien', 'psource-support' ), 
-			is_multisite() ? 'manage_network' : 'manage_options'
+			$this->network ? 'manage_network' : 'manage_options'
 		);
 
 		if ( isset( $_GET['action'] ) && isset( $_GET['category'] ) && 'edit' === $_GET['action'] ) {

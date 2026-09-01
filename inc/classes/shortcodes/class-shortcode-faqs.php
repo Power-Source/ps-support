@@ -8,6 +8,23 @@ class PSource_Support_FAQs_Shortcode extends PSource_Support_Shortcode {
 	}
 
 	public function render( $atts ) {
+		$atts = shortcode_atts( array( 'scope' => 'site' ), $atts, 'support-system-faqs' );
+		$network_scope = is_multisite() && 'network' === $atts['scope'];
+		if ( $network_scope ) {
+			$GLOBALS['psource_support_data_blog_id_override'] = 0;
+			$query = psource_support()->query;
+			$args = array( 'per_page' => -1, 'blog_id' => 0 );
+			if ( $query->faq_category_id ) {
+				$args['category'] = $query->faq_category_id;
+			}
+			if ( stripslashes( $query->faqs_search ) ) {
+				$args['s'] = stripslashes( $query->faqs_search );
+			}
+			$query->faqs = psource_support_get_faqs( $args );
+			$query->found_faqs = count( $query->faqs );
+			$query->remaining_faqs = count( $query->faqs );
+			$query->current_faq = -1;
+		}
 		$this->start();
 
 		if ( ! psource_support_current_user_can( 'read_faq' ) ) {
@@ -22,12 +39,21 @@ class PSource_Support_FAQs_Shortcode extends PSource_Support_Shortcode {
 					<?php echo $message; ?>
 				</div>
 			<?php
-			return $this->end();
+			$output = $this->end();
+			if ( $network_scope ) {
+				unset( $GLOBALS['psource_support_data_blog_id_override'] );
+			}
+			return $output;
 		}
 
 		psource_support_get_template( 'index', 'faqs' );
 
-		return $this->end();
+		$output = $this->end();
+		if ( $network_scope ) {
+			unset( $GLOBALS['psource_support_data_blog_id_override'] );
+		}
+
+		return $output;
 	}
 
 }

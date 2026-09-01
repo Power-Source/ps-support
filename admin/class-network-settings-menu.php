@@ -58,15 +58,33 @@ class PSource_Support_Network_Settings_Menu extends PSource_Support_Admin_Menu {
 		$staff_dropdown = psource_support_super_admins_dropdown( $args );
 		
 		$menu_name = $settings['psource_support_menu_name'];
+		$network_faq_name = $settings['psource_support_network_faq_name'];
+		$network_faq_dashboard_enabled = ! empty( $settings['psource_support_network_faq_dashboard_enabled'] );
+		$network_faq_dashboard_mode = isset( $settings['psource_support_network_faq_dashboard_mode'] ) ? $settings['psource_support_network_faq_dashboard_mode'] : 'latest';
+		$network_faq_dashboard_count = absint( $settings['psource_support_network_faq_dashboard_count'] );
+		$network_faq_dashboard_sticky_ids = array_map( 'absint', (array) $settings['psource_support_network_faq_dashboard_sticky_ids'] );
+		$network_faqs = is_multisite() ? psource_support_get_faqs( array( 'blog_id' => 0, 'per_page' => -1, 'orderby' => 'question', 'order' => 'asc' ) ) : array();
 		$from_name = $settings['psource_support_from_name'];
 		$from_email = $settings['psource_support_from_mail'];
 		$tickets_role = $settings['psource_support_tickets_role'];
 		$faqs_role = $settings['psource_support_faqs_role'];
 		$ticket_privacy = $settings['psource_ticket_privacy'];
+		$crm_sync_enabled = ! empty( $settings['psource_support_crm_sync_enabled'] );
 		$crm_sync_blog_id = absint( $settings['psource_support_crm_sync_blog_id'] );
+		if ( ! $crm_sync_blog_id ) {
+			$crm_sync_blog_id = psource_support_get_crm_sync_blog_id();
+		}
+		$crm_sync_sites = array();
+		if ( is_multisite() ) {
+			foreach ( get_sites( array( 'number' => 0, 'network_id' => get_current_network_id() ) ) as $site ) {
+				$site_name = get_blog_option( $site->blog_id, 'blogname', $site->domain . $site->path );
+				$crm_sync_sites[ absint( $site->blog_id ) ] = sprintf( '%s — %s%s', $site_name, $site->domain, $site->path );
+			}
+		}
 		$staff_roles = isset( $settings['psource_support_staff_roles'] ) ? (array) $settings['psource_support_staff_roles'] : array( 'administrator', 'editor' );
 		$close_ticket_roles = isset( $settings['psource_support_close_ticket_roles'] ) ? (array) $settings['psource_support_close_ticket_roles'] : array( 'administrator', 'editor' );
 		$delete_ticket_roles = isset( $settings['psource_support_delete_ticket_roles'] ) ? (array) $settings['psource_support_delete_ticket_roles'] : array( 'administrator' );
+		$allow_subsite_support = ! empty( $settings['psource_support_allow_subsite_support'] );
 		$roles = MU_Support_System::get_roles();
 
 		$errors = get_settings_errors( 'psource-support-settings' );
@@ -236,6 +254,20 @@ class PSource_Support_Network_Settings_Menu extends PSource_Support_Admin_Menu {
 				$settings['psource_support_menu_name'] = $input['menu_name'];
 		}
 
+		if ( isset( $input['network_faq_name'] ) ) {
+			$network_faq_name = sanitize_text_field( $input['network_faq_name'] );
+			$settings['psource_support_network_faq_name'] = $network_faq_name ? $network_faq_name : __( 'Netzwerk-FAQ', 'psource-support' );
+		}
+
+		if ( is_multisite() ) {
+			$settings['psource_support_network_faq_dashboard_enabled'] = ! empty( $input['network_faq_dashboard_enabled'] );
+			$settings['psource_support_network_faq_dashboard_mode'] = isset( $input['network_faq_dashboard_mode'] ) && 'sticky' === $input['network_faq_dashboard_mode'] ? 'sticky' : 'latest';
+			$settings['psource_support_network_faq_dashboard_count'] = max( 1, min( 10, isset( $input['network_faq_dashboard_count'] ) ? absint( $input['network_faq_dashboard_count'] ) : 5 ) );
+			$valid_faq_ids = wp_list_pluck( psource_support_get_faqs( array( 'blog_id' => 0, 'per_page' => -1 ) ), 'faq_id' );
+			$posted_faq_ids = isset( $input['network_faq_dashboard_sticky_ids'] ) ? array_map( 'absint', (array) $input['network_faq_dashboard_sticky_ids'] ) : array();
+			$settings['psource_support_network_faq_dashboard_sticky_ids'] = array_values( array_intersect( $posted_faq_ids, array_map( 'absint', $valid_faq_ids ) ) );
+		}
+
 		// FROM NAME
 		if ( isset( $input['from_name'] ) ) {
 			$input['from_name'] = sanitize_text_field( $input['from_name'] );
@@ -270,13 +302,12 @@ class PSource_Support_Network_Settings_Menu extends PSource_Support_Admin_Menu {
 			$settings['psource_ticket_privacy'] = $input['privacy'];
 		}
 
-		// Multisite CRM Sync Override (optional)
+		// Multisite CRM synchronization.
 		if ( is_multisite() ) {
-			$settings['psource_support_crm_sync_blog_id'] = 0;
-
-			if ( isset( $input['crm_sync_blog_id'] ) && '' !== trim( (string) $input['crm_sync_blog_id'] ) ) {
-				$crm_sync_blog_id = absint( $input['crm_sync_blog_id'] );
-				if ( $crm_sync_blog_id > 0 && get_blog_details( $crm_sync_blog_id ) ) {
+			$settings['psource_support_crm_sync_enabled'] = ! empty( $input['crm_sync_enabled'] );
+			if ( $settings['psource_support_crm_sync_enabled'] ) {
+				$crm_sync_blog_id = isset( $input['crm_sync_blog_id'] ) ? absint( $input['crm_sync_blog_id'] ) : 0;
+				if ( $crm_sync_blog_id && get_blog_details( $crm_sync_blog_id ) ) {
 					global $wpdb;
 					$crm_agenda_table = $wpdb->get_blog_prefix( $crm_sync_blog_id ) . 'smartcrm_agenda';
 					$table_exists = (string) $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $crm_agenda_table ) );
@@ -287,11 +318,18 @@ class PSource_Support_Network_Settings_Menu extends PSource_Support_Admin_Menu {
 						add_settings_error( 'psource-support-settings', 'crm-sync-no-crm', __( 'Die gewählte Site hat kein aktives CRM (smartcrm_agenda nicht gefunden).', 'psource-support' ) );
 					}
 				} else {
-					add_settings_error( 'psource-support-settings', 'crm-sync-blog', __( 'Die CRM-Synchronisations-Site-ID ist ungültig.', 'psource-support' ) );
+					add_settings_error( 'psource-support-settings', 'crm-sync-blog', __( 'Bitte wähle eine gültige CRM-Site aus der Vorschlagsliste.', 'psource-support' ) );
 				}
+			} elseif ( empty( $settings['psource_support_crm_sync_blog_id'] ) ) {
+				$settings['psource_support_crm_sync_blog_id'] = psource_support_get_crm_sync_blog_id();
 			}
 		} else {
-			$settings['psource_support_crm_sync_blog_id'] = 0;
+			$settings['psource_support_crm_sync_enabled'] = ! empty( $input['crm_sync_enabled'] );
+			$settings['psource_support_crm_sync_blog_id'] = get_current_blog_id();
+		}
+
+		if ( is_multisite() ) {
+			$settings['psource_support_allow_subsite_support'] = ! empty( $input['allow_subsite_support'] );
 		}
 
 		
@@ -410,10 +448,8 @@ class PSource_Support_Network_Settings_Menu extends PSource_Support_Admin_Menu {
 		else
 			$settings['psource_support_faqs_page'] = false;
 
-		
 		return $settings;
 	}
-		
 
 	public function render_labels_settings() {
 		if ( ! psource_support_current_user_can( 'manage_options' ) ) {

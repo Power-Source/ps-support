@@ -5,7 +5,7 @@ Plugin URI: https://psource.eimen.net/wiki/ps-support-system-dokumentation/
 Description: Richte auf jeder ClassicPress-Seite ein fantastisches Support-Ticket-System mit häufig gestellten Fragen ein, oder biete Deinen Usern einen Netzwerkweiten HelpDesk
 Author: PSOURCE
 Network: true
-Version: 1.0.0
+Version: 1.0.1
 License: GPLv2
 Author URI: https://psource.eimen.net/
 Domain Path: languages
@@ -13,7 +13,7 @@ Text Domain: psource-support
 */
 
 /*
-Copyright 2018-2025 PSOURCE (https://psource.eimen.net/)
+Copyright 2018-2026 PSOURCE (https://psource.eimen.net/)
 Author DerN3rd
 
 This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-define( 'PSOURCE_SUPPORT_PLUGIN_VERSION', '1.0.0' );
+define( 'PSOURCE_SUPPORT_PLUGIN_VERSION', '1.0.1' );
 
 if ( ! defined( 'PSOURCE_SUPPORT_LANG_DOMAIN' ) )
 	define('PSOURCE_SUPPORT_LANG_DOMAIN', 'psource-support');
@@ -159,7 +159,7 @@ if ( ! class_exists( 'MU_Support_System') ) {
 			);
 
 
-			if ( ( is_multisite() && $this->settings->get( 'psource_support_blog_id' ) == get_current_blog_id() ) || ! is_multisite() )
+			if ( ! is_multisite() || $this->settings->get( 'psource_support_blog_id' ) == get_current_blog_id() || psource_support_get_subsite_front_settings() )
 				$this->shortcodes = new PSource_Support_Shortcodes();
 		}
 

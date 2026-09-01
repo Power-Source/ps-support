@@ -147,6 +147,11 @@ function psource_support_build_tickets_query_parts( $args ) {
 
 	if ( $args['category'] )
 		$where[] = $wpdb->prepare( "t.cat_id = %d", $args['category'] );
+	elseif ( ! empty( $args['category_in'] ) ) {
+		$category_in = array_values( array_filter( array_map( 'absint', (array) $args['category_in'] ) ) );
+		if ( $category_in )
+			$where[] = 't.cat_id IN (' . implode( ',', $category_in ) . ')';
+	}
 
 	if ( $args['priority'] !== false )
 		$where[] = $wpdb->prepare( "t.ticket_priority = %d", $args['priority'] );
@@ -226,6 +231,7 @@ function psource_support_get_ticket_rows( $args ) {
 		'has_admin' => null,
 		'user_in' => false,
 		'category' => false,
+		'category_in' => false,
 		'priority' => false,
 		'site_id' => $current_site_id,
 		'count' => false,
@@ -809,19 +815,6 @@ function psource_support_get_user_ticket_url( $ticket_id, $user_id = false ) {
 	if ( ! $ticket )
 		return false;
 
-	$settings = psource_support_get_settings();
-
-	$support_blog_id = get_current_blog_id();
-	if ( is_multisite() ) {
-		$support_blog_id = $settings['psource_support_blog_id'];
-		switch_to_blog( $support_blog_id );
-		$support_page = get_post( psource_support_get_support_page_id() );
-		restore_current_blog();
-	}
-	else {
-		$support_page = get_post( psource_support_get_support_page_id() );
-	}
-
 	// Check the user role
 	$user_can = psource_support_user_can( $user_id, 'read_ticket' );
 	if ( ! $user_can )
@@ -829,9 +822,10 @@ function psource_support_get_user_ticket_url( $ticket_id, $user_id = false ) {
 
 	$url  = false;
 
-	if ( psource_support_get_support_page_id() && $support_page ) {
+	$support_page_url = psource_support_get_support_page_url( $ticket->blog_id );
+	if ( $support_page_url ) {
 		// The tickets are in the frontend
-		$url = psource_support_get_the_ticket_permalink( $ticket_id );
+		$url = add_query_arg( 'tid', $ticket->ticket_id, $support_page_url );
 	}
 	else {
 		// The tickets are in the admin side
@@ -856,15 +850,7 @@ function psource_support_get_the_ticket_permalink( $ticket_id = false ) {
 		if ( ! $ticket )
 			return '';
 
-		$blog_id = psource_support_get_setting( 'psource_support_blog_id' );
-		if ( is_multisite() )
-			switch_to_blog( $blog_id );
-
-		$support_page_id = psource_support_get_support_page_id();
-		$url = get_permalink( $support_page_id );
-
-		if ( is_multisite() )
-			restore_current_blog();
+		$url = psource_support_get_support_page_url( $ticket->blog_id );
 
 		if ( ! $url )
 			return '';

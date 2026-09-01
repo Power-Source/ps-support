@@ -7,7 +7,7 @@ class PSource_Support_Network_FAQ_Categories extends PSource_Support_Admin_Menu 
 			'ticket-manager',
 			__( 'FAQ-Kategorien', 'psource-support' ),
 			__( 'FAQ-Kategorien', 'psource-support' ), 
-			is_multisite() ? 'manage_network' : 'manage_options'
+			$this->network ? 'manage_network' : 'manage_options'
 		);
 
 		if ( isset( $_GET['action'] ) && isset( $_GET['category'] ) && 'edit' === $_GET['action'] ) {
@@ -65,7 +65,7 @@ class PSource_Support_Network_FAQ_Categories extends PSource_Support_Admin_Menu 
 					exit();
 				}
 				elseif ( $edit ) {
-					psource_support_update_faq_category( $faq_category->cat_id, array( 'cat_name' => $category_name, 'user_id' => $user_id ) );
+					psource_support_update_faq_category( $faq_category->cat_id, array( 'cat_name' => $category_name ) );
 					$redirect = add_query_arg( 
 						array( 
 							'updated' => 'true'

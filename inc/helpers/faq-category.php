@@ -18,7 +18,7 @@ function psource_support_insert_faq_category_row( $insert ) {
 	$res = $wpdb->insert(
 		psource_support_get_faq_category_table(),
 		$insert,
-		array( '%s', '%d', '%d' )
+		array( '%s', '%d', '%d', '%d' )
 	);
 	return $res ? $wpdb->insert_id : false;
 }
@@ -42,7 +42,7 @@ function psource_support_delete_faq_category_row( $cat_id ) {
 }
 
 function psource_support_sanitize_faq_category_fields( $cat ) {
-	$int_fields = array( 'cat_id', 'user_id', 'site_id', 'qcount' );
+	$int_fields = array( 'cat_id', 'user_id', 'site_id', 'blog_id', 'qcount' );
 
 	foreach ( get_object_vars( $cat ) as $name => $value ) {
 		if ( in_array( $name, $int_fields ) )
@@ -73,7 +73,8 @@ function psource_support_get_faq_categories( $args = array() ) {
 		'per_page' => -1,
 		'count' => false,
 		'page' => 1,
-		'defcat' => null
+		'defcat' => null,
+		'blog_id' => psource_support_get_data_blog_id(),
 	);
 
 	$args = wp_parse_args( $args, $defaults );
@@ -83,12 +84,14 @@ function psource_support_get_faq_categories( $args = array() ) {
 	$count    = $args['count'];
 	$page     = $args['page'];
 	$defcat   = $args['defcat'];
+	$blog_id  = absint( $args['blog_id'] );
 
 	$current_site_id = ! empty ( $current_site ) ? $current_site->id : 1;
 
 	// WHERE
 	$where = array();
 	$where[] = $wpdb->prepare( "site_id = %d", $current_site_id );
+	$where[] = $wpdb->prepare( "blog_id = %d", $blog_id );
 
 	if ( $defcat !== null ) {
 		// This is an enum field type!!
@@ -187,6 +190,7 @@ function psource_support_insert_faq_category( $name ) {
 	$cat_id = psource_support_insert_faq_category_row( array(
 		'cat_name' => $name,
 		'site_id'  => $current_site_id,
+		'blog_id'  => psource_support_get_data_blog_id(),
 		'qcount'   => 0,
 	) );
 
@@ -241,7 +245,8 @@ function psource_support_update_faq_category( $faq_category_id, $args = array() 
 }
 
 function psource_support_get_default_faq_category() {
-	$default_category = wp_cache_get( 'support_system_default_faq_category', 'support_system_faq_categories' );
+	$cache_key = 'support_system_default_faq_category_' . psource_support_get_data_blog_id();
+	$default_category = wp_cache_get( $cache_key, 'support_system_faq_categories' );
 
 	if ( $default_category )
 		return $default_category;
@@ -249,11 +254,18 @@ function psource_support_get_default_faq_category() {
 	$results = psource_support_get_faq_categories( array( 'per_page' => 1, 'defcat' => 1 ) );
 
 	if ( isset( $results[0] ) ) {
-		wp_cache_set( 'support_system_default_faq_category', $results[0], 'support_system_faq_categories' );
+		wp_cache_set( $cache_key, $results[0], 'support_system_faq_categories' );
 		return $results[0];
 	}
 
-
+	$default_name = __( 'Allgemeine Fragen', 'psource-support' );
+	psource_support_insert_faq_category( $default_name );
+	$default_category = psource_support_get_faq_category( $default_name );
+	if ( $default_category ) {
+		psource_support_update_faq_category_row( $default_category->cat_id, array( 'defcat' => 2 ), array( '%d' ) );
+		psource_support_clean_faq_category_cache( $default_category->cat_id );
+		return psource_support_get_faq_category( $default_category->cat_id );
+	}
 
 	return false;
 }
@@ -266,8 +278,13 @@ function psource_support_set_default_faq_category( $faq_category_id ) {
 		return false;
 
 	$default_category = psource_support_get_default_faq_category();
-	if ( $default_category )
-		$wpdb->query( "UPDATE " . psource_support_get_faq_category_table() . " SET defcat = 1" ); // enum type field!!
+	if ( $default_category ) {
+		$wpdb->query( $wpdb->prepare(
+			"UPDATE " . psource_support_get_faq_category_table() . " SET defcat = 1 WHERE site_id = %d AND blog_id = %d",
+			$faq_category->site_id,
+			$faq_category->blog_id
+		) );
+	}
 
 	$result = psource_support_update_faq_category_row(
 		$faq_category_id,
@@ -275,7 +292,7 @@ function psource_support_set_default_faq_category( $faq_category_id ) {
 		array( '%d' )
 	);
 
-	wp_cache_delete( 'support_system_default_faq_category', 'support_system_faq_categories' );
+	wp_cache_delete( 'support_system_default_faq_category_' . $faq_category->blog_id, 'support_system_faq_categories' );
 	psource_support_clean_faq_category_cache( $faq_category_id );
 	psource_support_clean_faq_category_cache( $default_category->cat_id );
 

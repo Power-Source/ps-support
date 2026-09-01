@@ -2,9 +2,10 @@
 Contributors: DerN3rd (PSOURCE)
 Tags: multisite, support, helpdesk, faq, classicpress-plugin
 Requires at least: 4.9
-Tested up to: 6.8.1
-Stable tag: 1.0.0
-Requires PHP: 7.0
+Tested up to: 7.1.0
+ClassicPress: 2.7.1
+Stable tag: 1.0.1
+Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,7 +50,7 @@ Allgemein:
 * Erlaubte Rollen fuer Tickets
 * Erlaubte Rollen fuer FAQs
 * Datenschutz fuer Tickets
-* Optionale CRM-Sync-Site-ID fuer die Bearbeiterliste in Multisite
+* CRM-Sync aktivieren/deaktivieren und CRM-Site per Suche waehlen; Standard ist der Netzwerk-Hauptblog
 * Optionale Einschraenkung ueber PS Bloghosting / Pro Sites
 
 Frontend:
@@ -115,6 +116,15 @@ Ja. Wenn passende SmartCRM-Tabellen vorhanden sind, kann die Bearbeiterliste aus
 4. Einstellungen fuer Rollen, Datenschutz und Frontend-Seiten
 
 == Changelog ==
+
+= 1.0.1 =
+
+* Vollwertiger, bloggetrennter Ticket- und FAQ-Support fuer Subsites mit zentraler Netzwerkfreigabe
+* Netzwerk-FAQ als unveraenderter zentraler Bestand erhalten, frei benennbar und weiterhin auf Subsites lesbar
+* Optionales globales Dashboard-Widget fuer neueste oder ausgewaehlte Netzwerk-FAQs mit Link zur FAQ-Seite der Main-Site
+* CRM-Sync mit Aktivschalter, durchsuchbarer Site-Auswahl und Main-Site als Standard
+* MarketPress-Integration auf lokale Shop-FAQs, Kategorien und Bearbeiter umgestellt
+* Datenbankmigration, Standardkategorien und Berechtigungen fuer die Blogtrennung korrigiert
 
 = 1.0.0 =
 

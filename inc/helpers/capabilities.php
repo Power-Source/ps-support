@@ -17,6 +17,8 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 		$user_can = true;
 	}
 	else {
+		$current_blog_user = get_userdata( $user_id );
+		$current_blog_role = $current_blog_user && isset( $current_blog_user->roles[0] ) ? $current_blog_user->roles[0] : '';
 
 		$cache_key = 'user_role_' . $user_id;
 		$user_role = wp_cache_get( $cache_key, 'support_system_user_role' );
@@ -56,6 +58,10 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 		$staff_roles = isset( $settings['psource_support_staff_roles'] )
 			? (array) $settings['psource_support_staff_roles']
 			: array( 'administrator', 'editor' );
+		$subsite_config = function_exists( 'psource_support_get_subsite_front_settings' ) ? psource_support_get_subsite_front_settings() : false;
+		if ( $subsite_config && ! empty( $subsite_config['staff_roles'] ) ) {
+			$staff_roles = (array) $subsite_config['staff_roles'];
+		}
 
 		switch ( $cap ) {
 			case 'insert_ticket':
@@ -70,13 +76,13 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 			case 'reply_ticket':
 			case 'assign_ticket':
 			case 'label_ticket': {
-				if ( in_array( $user_role, $staff_roles ) )
+				if ( in_array( $current_blog_role, $staff_roles ) )
 					$user_can = true;
 				break;
 			}
 
 			case 'delete_reply': {
-				if ( in_array( $user_role, $staff_roles ) ) {
+				if ( in_array( $current_blog_role, $staff_roles ) ) {
 					$user_can = true;
 				} else {
 					// Ticket owner can delete their own reply
@@ -101,7 +107,7 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 			}
 
 			case 'read_faq': { 
-				if ( in_array( $user_role, $settings['psource_support_faqs_role'] ) )
+				if ( $is_selected_agent || in_array( $user_role, $settings['psource_support_faqs_role'] ) )
 					$user_can = true;
 				break; 
 			}
@@ -119,7 +125,7 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 				$close_roles = isset( $settings['psource_support_close_ticket_roles'] )
 					? (array) $settings['psource_support_close_ticket_roles']
 					: $staff_roles;
-				if ( in_array( $user_role, $close_roles ) ) {
+				if ( $is_selected_agent || in_array( $current_blog_role, $close_roles ) ) {
 					$user_can = true;
 					break;
 				}
@@ -138,13 +144,13 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 				$delete_roles = isset( $settings['psource_support_delete_ticket_roles'] )
 					? (array) $settings['psource_support_delete_ticket_roles']
 					: array( 'administrator' );
-				if ( in_array( $user_role, $delete_roles ) )
+				if ( $is_selected_agent || in_array( $current_blog_role, $delete_roles ) )
 					$user_can = true;
 				break;
 			}
 
 			case 'update_ticket': { 
-				if ( in_array( $user_role, $staff_roles ) )
+				if ( $is_selected_agent || in_array( $current_blog_role, $staff_roles ) )
 					$user_can = true;
 				break;
 			}
