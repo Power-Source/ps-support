@@ -125,6 +125,7 @@ Ja. Wenn passende SmartCRM-Tabellen vorhanden sind, kann die Bearbeiterliste aus
 * CRM-Sync mit Aktivschalter, durchsuchbarer Site-Auswahl und Main-Site als Standard
 * MarketPress-Integration auf lokale Shop-FAQs, Kategorien und Bearbeiter umgestellt
 * Datenbankmigration, Standardkategorien und Berechtigungen fuer die Blogtrennung korrigiert
+* Warnung durch fehlende Initialisierung von `$is_selected_agent` in der Rechtepruefung behoben
 
 = 1.0.0 =
 

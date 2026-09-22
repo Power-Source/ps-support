@@ -11,6 +11,7 @@ function psource_support_current_user_can( $cap = '' ) {
 function psource_support_user_can( $user_id, $cap = '' ) {
 
 	$settings = psource_support_get_settings();
+	$is_selected_agent = false;
 
 	$user_can = false;
 	if ( ( is_multisite() && is_super_admin( $user_id ) ) || ( ! is_multisite() && user_can( $user_id, 'manage_options' ) ) ) {
@@ -62,7 +63,6 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 		if ( $subsite_config && ! empty( $subsite_config['staff_roles'] ) ) {
 			$staff_roles = (array) $subsite_config['staff_roles'];
 		}
-
 		switch ( $cap ) {
 			case 'insert_ticket':
 			case 'read_ticket':

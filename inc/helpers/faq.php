@@ -77,6 +77,7 @@ function psource_support_get_faqs( $args = array() ) {
 		'page' => 1,
 		'category' => false,
 		'category_in' => false,
+		'faq_in' => false,
 		'site_id' => $current_site_id,
 		'blog_id' => psource_support_get_data_blog_id(),
 		'orderby' => 'faq_id',
@@ -89,6 +90,7 @@ function psource_support_get_faqs( $args = array() ) {
 	$page     = $args['page'];
 	$category = $args['category'];
 	$category_in = $args['category_in'];
+	$faq_in   = $args['faq_in'];
 	$site_id  = $args['site_id'];
 	$blog_id  = absint( $args['blog_id'] );
 	$orderby  = $args['orderby'];
@@ -106,6 +108,10 @@ function psource_support_get_faqs( $args = array() ) {
 	else
 		$where[] = $wpdb->prepare( "site_id = %d", $current_site_id );
 	$where[] = $wpdb->prepare( "blog_id = %d", $blog_id );
+	if ( false !== $faq_in ) {
+		$faq_in = array_values( array_filter( array_map( 'absint', (array) $faq_in ) ) );
+		$where[] = $faq_in ? 'faq_id IN (' . implode( ',', $faq_in ) . ')' : '1 = 0';
+	}
 
 	// Search
 	if ( $s ) {
