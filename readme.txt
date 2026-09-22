@@ -117,15 +117,16 @@ Ja. Wenn passende SmartCRM-Tabellen vorhanden sind, kann die Bearbeiterliste aus
 
 == Changelog ==
 
-= 1.0.1 =
+= 1.0.2 =
+* Warnung durch fehlende Initialisierung von `$is_selected_agent` in der Rechtepruefung behoben
 
+= 1.0.1 =
 * Vollwertiger, bloggetrennter Ticket- und FAQ-Support fuer Subsites mit zentraler Netzwerkfreigabe
 * Netzwerk-FAQ als unveraenderter zentraler Bestand erhalten, frei benennbar und weiterhin auf Subsites lesbar
 * Optionales globales Dashboard-Widget fuer neueste oder ausgewaehlte Netzwerk-FAQs mit Link zur FAQ-Seite der Main-Site
 * CRM-Sync mit Aktivschalter, durchsuchbarer Site-Auswahl und Main-Site als Standard
 * MarketPress-Integration auf lokale Shop-FAQs, Kategorien und Bearbeiter umgestellt
 * Datenbankmigration, Standardkategorien und Berechtigungen fuer die Blogtrennung korrigiert
-* Warnung durch fehlende Initialisierung von `$is_selected_agent` in der Rechtepruefung behoben
 
 = 1.0.0 =
 
