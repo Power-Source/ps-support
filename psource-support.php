@@ -5,7 +5,7 @@ Plugin URI: https://psource.eimen.net/wiki/ps-support-system-dokumentation/
 Description: Richte auf jeder ClassicPress-Seite ein fantastisches Support-Ticket-System mit häufig gestellten Fragen ein, oder biete Deinen Usern einen Netzwerkweiten HelpDesk
 Author: PSOURCE
 Network: true
-Version: 1.0.1
+Version: 1.0.2
 License: GPLv2
 Author URI: https://psource.eimen.net/
 Domain Path: languages
@@ -30,7 +30,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-define( 'PSOURCE_SUPPORT_PLUGIN_VERSION', '1.0.1' );
+define( 'PSOURCE_SUPPORT_PLUGIN_VERSION', '1.0.2' );
 
 if ( ! defined( 'PSOURCE_SUPPORT_LANG_DOMAIN' ) )
 	define('PSOURCE_SUPPORT_LANG_DOMAIN', 'psource-support');
