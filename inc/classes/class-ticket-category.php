@@ -28,7 +28,7 @@ class PSource_Support_Ticket_Category {
             $blog_id = psource_support_get_data_blog_id();
 
             $_cat = wp_cache_get($cat_id, 'support_system_ticket_categories');
-            if ( $_cat && (int) $_cat->blog_id !== $blog_id ) {
+            if ( $_cat && ( (int) $_cat->blog_id !== $blog_id || (int) $_cat->site_id !== (int) $current_site_id ) ) {
                 $_cat = false;
             }
 

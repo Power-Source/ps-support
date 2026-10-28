@@ -91,9 +91,12 @@ function psource_support_send_admin_new_ticket_mail( $ticket_id ) {
 		$network_admin
 	);
 
+	$category = psource_support_get_ticket_category_for_ticket( $ticket );
+	$is_team = psource_support_category_has_team( $category );
+	$team_ids = $is_team ? psource_support_get_category_assignee_ids( $category ) : array();
 	$admin_id = $ticket->admin_id;
 	$user = get_userdata( $admin_id );
-	if ( ! $user ) {
+	if ( ! $user && ! $is_team ) {
 		$settings = psource_support_get_settings();
 		$main_admin = $settings['psource_support_main_super_admin'];
 		if ( is_numeric( $main_admin ) ) {
@@ -124,7 +127,19 @@ function psource_support_send_admin_new_ticket_mail( $ticket_id ) {
 
 	$mail_content = psource_support_admin_get_new_ticket_mail_content( $args );
 
-	wp_mail( $user->user_email, __( "Neues Support Ticket: ", 'psource-support' ) . $ticket->title, $mail_content, $headers );
+	if ( $is_team ) {
+		foreach ( $team_ids as $user_id ) {
+			$member = get_userdata( $user_id );
+			$args['visit_link'] = psource_support_get_user_ticket_url( $ticket->ticket_id, $user_id );
+			if ( ! $args['visit_link'] ) {
+				$args['visit_link'] = $visit_link;
+			}
+			$mail_content = psource_support_admin_get_new_ticket_mail_content( $args );
+			wp_mail( $member->user_email, __( "Neues Support Ticket: ", 'psource-support' ) . $ticket->title, $mail_content, $headers );
+		}
+	} else {
+		wp_mail( $user->user_email, __( "Neues Support Ticket: ", 'psource-support' ) . $ticket->title, $mail_content, $headers );
+	}
 }
 
 
@@ -139,6 +154,22 @@ function psource_support_send_emails_on_ticket_reply( $reply_id, $send_emails ) 
 	$ticket = psource_support_get_ticket( $reply->ticket_id );
 	if ( ! $ticket )
 		return;
+
+	$category = psource_support_get_ticket_category_for_ticket( $ticket );
+	if ( psource_support_category_has_team( $category ) ) {
+		$poster_id = absint( $reply->get_poster_id() );
+		if ( ! $reply->is_internal && $poster_id !== (int) $ticket->user_id ) {
+			psource_support_send_user_reply_mail( $ticket, $reply );
+		}
+		$assigned = get_userdata( $ticket->admin_id );
+		$ids = $assigned ? array( (int) $assigned->ID ) : psource_support_get_category_assignee_ids( $category );
+		foreach ( $ids as $user_id ) {
+			if ( $user_id !== $poster_id && $user_id !== (int) $ticket->user_id ) {
+				psource_support_send_admin_reply_mail( get_userdata( $user_id ), $ticket, $reply );
+			}
+		}
+		return;
+	}
 
 	if ( empty( $ticket->admin_id ) ) {
 		$super_admin = MU_Support_System::get_main_admin_details();
@@ -254,6 +285,13 @@ function psource_support_send_admin_reply_mail( $admin_user, $ticket, $reply ) {
 		),
 		$admin_url
 	);
+	$category = psource_support_get_ticket_category_for_ticket( $ticket );
+	if ( $admin_user && psource_support_category_has_team( $category ) ) {
+		$team_link = psource_support_get_user_ticket_url( $ticket->ticket_id, $admin_user->ID );
+		if ( $team_link ) {
+			$visit_link = $team_link;
+		}
+	}
 
 	// Email arguments
 	$args = array(

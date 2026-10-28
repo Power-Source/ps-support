@@ -96,7 +96,7 @@ function psource_support_list_replies( $args = array() ) {
 	unset( $replies[0] );
 
 	// Filter out internal notes for non-staff users
-	if ( ! psource_support_current_user_can( 'update_ticket' ) ) {
+	if ( ! psource_support_current_user_can( 'update_ticket', psource_support()->query->ticket->ticket_id ) ) {
 		$replies = array_filter( $replies, function( $reply ) {
 			return ! (int) $reply->is_internal;
 		} );
@@ -459,7 +459,7 @@ function psource_support_widget( $widget_args, $callback, $callback_args = array
 
 
 function psource_support_the_staff_box( $args = array() ) {
-	if ( ! psource_support_is_staff() )
+	if ( ! psource_support_is_staff() && ! psource_support_user_handles_team_ticket( get_current_user_id(), psource_support()->query->ticket ) )
 		return;
 
 	$defaults = array(
@@ -488,7 +488,8 @@ function psource_support_the_staff_box( $args = array() ) {
 							array( 
 								'show_empty' => __( 'Noch nicht zugewiesen', 'psource-support' ), 
 								'name' => 'ticket-staff' ,
-								'selected' => psource_support_the_ticket_staff_login()
+								'selected' => psource_support_the_ticket_staff_login(),
+								'ticket_id' => psource_support_get_the_ticket_id(),
 							) 
 						); ?>
 					</label>

@@ -40,7 +40,7 @@
 		<?php $this->render_row(__( 'Kategorie', 'psource-support' ), $categories_dropdown ); ?>
 		<?php $this->render_row(__( 'Priorität', 'psource-support' ), $priorities_dropdown ); ?>
 
-		<?php if ( psource_support_current_user_can( 'update_ticket' ) ): ?>
+		<?php if ( psource_support_current_user_can( 'update_ticket', $ticket->ticket_id ) ): ?>
 
 			<?php ob_start(); ?>
 				<select name="responsibility" id="responsibility">
@@ -69,7 +69,7 @@
 			<?php $this->render_row(__( "Ticket schließen?", 'psource-support' ), ob_get_clean() ); ?>
 		<?php endif; ?>
 
-		<?php if ( psource_support_current_user_can( 'update_ticket' ) ): ?>
+		<?php if ( psource_support_current_user_can( 'update_ticket', $ticket->ticket_id ) ): ?>
 			<?php ob_start(); ?>
 				<label for="is-internal-note">
 					<input type="checkbox" name="is_internal" id="is-internal-note" value="1" />

@@ -26,7 +26,7 @@ class PSource_Support_Admin_Support_Menu extends PSource_Support_Parent_Support_
 			);
 		}
 
-		if ( psource_support_subsite_settings_available() && current_user_can( 'manage_options' ) ) {
+		if ( is_multisite() && current_user_can( 'manage_options' ) ) {
 			$page_id = add_submenu_page(
 				$this->slug,
 				__( 'Support-Einstellungen', 'psource-support' ),
@@ -40,6 +40,27 @@ class PSource_Support_Admin_Support_Menu extends PSource_Support_Parent_Support_
 	}
 
 	public function render_site_settings() {
+		$current_tab = isset( $_GET['tab'] ) && in_array( $_GET['tab'], array( 'supportchat', 'supportbot' ), true ) ? $_GET['tab'] : 'general';
+		echo '<h2 class="nav-tab-wrapper psource-support-settings-tabs">';
+		foreach ( array( 'general' => __( 'Allgemein', 'psource-support' ), 'supportchat' => __( 'Supportchat', 'psource-support' ), 'supportbot' => __( 'Support-Bot', 'psource-support' ) ) as $tab => $label ) {
+			$active = $tab === $current_tab;
+			echo '<a class="nav-tab' . ( $active ? ' nav-tab-active' : '' ) . '" href="' .
+				esc_url( add_query_arg( array( 'page' => 'psource-support-site-settings', 'tab' => $tab ), admin_url( 'admin.php' ) ) ) . '">' .
+				esc_html( $label ) . '</a>';
+		}
+		echo '</h2>';
+		if ( 'supportbot' === $current_tab ) {
+			PSource_Support_Bot::page();
+			return;
+		}
+		if ( 'supportchat' === $current_tab ) {
+			PSource_Support_Chat_Settings::page();
+			return;
+		}
+		if ( ! psource_support_subsite_settings_available() ) {
+			echo '<div class="wrap"><p>' . esc_html__( 'Eigenständiger Ticket-/FAQ-Support ist vom Netzwerk nicht freigegeben. Der Supportchat wird im Tab Supportchat separat verwaltet.', 'psource-support' ) . '</p></div>';
+			return;
+		}
 		$blog_id = get_current_blog_id();
 		$config = psource_support_get_subsite_front_settings( $blog_id );
 		if ( ! $config ) {
@@ -283,8 +304,10 @@ class PSource_Support_Admin_Support_Menu extends PSource_Support_Parent_Support_
 
 		$args['blog_id'] = get_current_blog_id();
 
-		if ( 'requestor' === $settings['psource_ticket_privacy'] && ! psource_support_current_user_can( 'manage_options' ) )
+		if ( ( 'requestor' === $settings['psource_ticket_privacy'] || ! psource_support_current_user_can( 'read_ticket' ) ) && ! psource_support_current_user_can( 'manage_options' ) ) {
 			$args['user_in'] = array( get_current_user_id() );
+			$args['handler_category_ids'] = psource_support_get_user_category_ids( get_current_user_id() );
+		}
 
 		return $args;
 	}

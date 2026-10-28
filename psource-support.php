@@ -195,6 +195,10 @@ if ( ! class_exists( 'MU_Support_System') ) {
 			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'inc/classes/class-faq.php');
 			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'inc/classes/class-faq-category.php');
 			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'inc/classes/class-settings.php');
+			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'admin/class-support-chat-settings.php' );
+			PSource_Support_Chat_Settings::boot();
+			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'inc/classes/class-support-bot.php' );
+			PSource_Support_Bot::boot();
 
 			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'inc/helpers/general.php');
 			require_once( PSOURCE_SUPPORT_PLUGIN_DIR . 'inc/helpers/ticket.php');
@@ -281,7 +285,7 @@ if ( ! class_exists( 'MU_Support_System') ) {
 						}
 					}
 
-					if ( (boolean)$this->settings->get( 'psource_allow_only_pro_sites' ) && $admin_ticket_menu_allowed )
+					if ( (bool)$this->settings->get( 'psource_allow_only_pro_sites' ) && $admin_ticket_menu_allowed )
 						$admin_ticket_menu_allowed = function_exists( 'is_pro_site' ) && is_pro_site( get_current_blog_id(), absint( $this->settings->get( 'psource_pro_sites_level' ) ) );
 
 					// FAQs allowed?
@@ -450,4 +454,3 @@ function support_system_init() {
 	global $mu_support_system;
 	$mu_support_system = psource_support();
 }
-

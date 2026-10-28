@@ -1,4 +1,4 @@
-<h2 class="nav-tab-wrapper">
+<h2 class="nav-tab-wrapper psource-support-settings-tabs">
 	<?php foreach ( $tabs as $key => $name ): ?>
 		<?php $link = add_query_arg( 'tab', $key, $menu_url ); ?>
 		<a href="<?php echo $link; ?>" class="nav-tab <?php echo $current_tab == $key ? 'nav-tab-active' : ''; ?>"><?php echo $name; ?></a>

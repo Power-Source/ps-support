@@ -62,6 +62,140 @@ function psource_support_get_ticket_category( $cat ) {
 	return $cat;
 }
 
+/**
+ * Category teams live outside the legacy table, separately for each network and scope.
+ *
+ * @param PSource_Support_Ticket_Category $category Category.
+ * @return string
+ */
+function psource_support_category_team_option_name( $category ) {
+	return 'psource_support_category_team_' . absint( $category->blog_id ) . '_' . absint( $category->cat_id );
+}
+
+/**
+ * @param PSource_Support_Ticket_Category $category Category.
+ * @return bool
+ */
+function psource_support_category_has_team( $category ) {
+	$network_id = is_multisite() ? get_current_network_id() : 1;
+	return $category instanceof PSource_Support_Ticket_Category
+		&& (int) $category->site_id === (int) $network_id
+		&& (bool) get_network_option( $network_id, psource_support_category_team_option_name( $category ), array() );
+}
+
+/**
+ * Category-only candidates. Central categories can explicitly name network users;
+ * local categories and CRM-managed installations retain their existing pool.
+ *
+ * @param int|null $blog_id Category data scope, or the current scope.
+ * @return array
+ */
+function psource_support_get_category_available_assignees( $blog_id = null ) {
+	$blog_id = null === $blog_id ? psource_support_get_data_blog_id() : absint( $blog_id );
+	if ( ! is_multisite() || $blog_id || psource_support_get_setting( 'psource_support_crm_sync_enabled' ) ) {
+		return psource_support_get_available_assignees();
+	}
+
+	$assignees = array();
+	foreach ( psource_support_get_available_assignees() as $assignee ) {
+		$assignees[ absint( $assignee['user_id'] ) ] = $assignee;
+	}
+	$site_ids = get_sites( array( 'network_id' => get_current_network_id(), 'fields' => 'ids', 'number' => 0 ) );
+	foreach ( $site_ids as $site_id ) {
+		foreach ( get_users( array( 'blog_id' => $site_id, 'fields' => array( 'ID', 'display_name' ) ) ) as $user ) {
+			$assignees[ (int) $user->ID ] = array( 'user_id' => (int) $user->ID, 'label' => $user->display_name );
+		}
+	}
+	return array_values( $assignees );
+}
+
+/**
+ * Get eligible team members, or the existing single assignee for a legacy category.
+ *
+ * @param PSource_Support_Ticket_Category $category Category.
+ * @return int[] Unique existing user IDs. An unavailable team does not fall back to user_id.
+ */
+function psource_support_get_category_assignee_ids( $category ) {
+	$network_id = is_multisite() ? get_current_network_id() : 1;
+	if ( ! $category instanceof PSource_Support_Ticket_Category || (int) $category->site_id !== (int) $network_id ) {
+		return array();
+	}
+
+	if ( psource_support_category_has_team( $category ) ) {
+		$ids = (array) get_network_option( $network_id, psource_support_category_team_option_name( $category ), array() );
+		$allowed = wp_list_pluck( psource_support_get_category_available_assignees( $category->blog_id ), 'user_id' );
+		$ids = array_intersect( array_map( 'absint', $ids ), array_map( 'absint', $allowed ) );
+	} else {
+		$ids = array( absint( $category->user_id ) );
+	}
+
+	return array_values( array_unique( array_filter( $ids, function( $id ) {
+		return $id > 0 && (bool) get_userdata( $id );
+	} ) ) );
+}
+
+/**
+ * Membership is category-specific; it does not make the user global support staff.
+ *
+ * @param int                            $user_id User ID.
+ * @param PSource_Support_Ticket_Category $category Category.
+ * @return bool
+ */
+function psource_support_user_can_handle_category( $user_id, $category ) {
+	return in_array( absint( $user_id ), psource_support_get_category_assignee_ids( $category ), true );
+}
+
+/**
+ * Validate assignments before either the category row or its team option is changed.
+ *
+ * @param array    $ids Selected IDs.
+ * @param int|null $blog_id Category data scope, or the current scope.
+ * @return int[]|false
+ */
+function psource_support_validate_category_assignee_ids( $ids, $blog_id = null ) {
+	if ( ! is_array( $ids ) ) {
+		return false;
+	}
+	foreach ( $ids as $id ) {
+		if ( ! is_scalar( $id ) || ! ctype_digit( (string) $id ) ) {
+			return false;
+		}
+	}
+	$ids = array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
+	$allowed = array_map( 'absint', wp_list_pluck( psource_support_get_category_available_assignees( $blog_id ), 'user_id' ) );
+	foreach ( $ids as $id ) {
+		if ( ! in_array( $id, $allowed, true ) || ! get_userdata( $id ) ) {
+			return false;
+		}
+	}
+	return $ids;
+}
+
+function psource_support_save_category_team( $category, $ids ) {
+	$name = psource_support_category_team_option_name( $category );
+	if ( count( $ids ) > 1 ) {
+		update_network_option( $category->site_id, $name, $ids );
+	} else {
+		delete_network_option( $category->site_id, $name );
+	}
+}
+
+/**
+ * Categories a user handles in the current data scope.
+ *
+ * @param int $user_id User ID.
+ * @return int[]
+ */
+function psource_support_get_user_category_ids( $user_id ) {
+	$ids = array();
+	foreach ( psource_support_get_ticket_categories() as $category ) {
+		if ( psource_support_user_can_handle_category( $user_id, $category ) ) {
+			$ids[] = (int) $category->cat_id;
+		}
+	}
+	return $ids;
+}
+
 function psource_support_get_ticket_categories( $args = array() ) {
 	global $wpdb, $current_site;
 
@@ -174,12 +308,19 @@ function psource_support_ticket_categories_dropdown( $args = array() ) {
 		return ob_get_clean();
 }
 
-function psource_support_insert_ticket_category( $name, $user_id = false ) {
+function psource_support_insert_ticket_category( $name, $user_id = false, $assignee_ids = null ) {
 	global $current_site;
 
 	$current_site_id = ! empty ( $current_site ) ? $current_site->id : 1;
 
 	$user_id = $user_id === false ? get_current_user_id() : absint( $user_id );
+	if ( null !== $assignee_ids ) {
+		$assignee_ids = psource_support_validate_category_assignee_ids( $assignee_ids );
+		if ( false === $assignee_ids ) {
+			return false;
+		}
+		$user_id = count( $assignee_ids ) === 1 ? $assignee_ids[0] : 0;
+	}
 	
 	$name = trim( wp_unslash( $name ) );
 	if ( empty( $name ) )
@@ -199,6 +340,10 @@ function psource_support_insert_ticket_category( $name, $user_id = false ) {
 	if ( ! $cat_id )
 		return false;
 
+	if ( null !== $assignee_ids ) {
+		psource_support_save_category_team( psource_support_get_ticket_category( $cat_id ), $assignee_ids );
+	}
+
 	do_action( 'support_system_insert_ticket_category', $cat_id );
 
 	return $cat_id;
@@ -209,6 +354,7 @@ function psource_support_update_ticket_category( $ticket_category_id, $args = ar
 	if ( ! $ticket_category )
 		return false;
 
+	$single_assignment = array_key_exists( 'user_id', $args ) && ! array_key_exists( 'assignee_ids', $args );
 	$defaults = array(
 		'cat_name' => $ticket_category->cat_name,
 		'user_id' => $ticket_category->user_id,
@@ -219,6 +365,13 @@ function psource_support_update_ticket_category( $ticket_category_id, $args = ar
 	$cat_name = $args['cat_name'];
 	$user_id  = $args['user_id'];
 	$defcat   = $args['defcat'];
+	if ( array_key_exists( 'assignee_ids', $args ) ) {
+		$assignee_ids = psource_support_validate_category_assignee_ids( $args['assignee_ids'], $ticket_category->blog_id );
+		if ( false === $assignee_ids ) {
+			return false;
+		}
+		$user_id = count( $assignee_ids ) === 1 ? $assignee_ids[0] : 0;
+	}
 
 	$cat_name = trim( $cat_name );
 	if ( empty( $cat_name ) )
@@ -239,8 +392,14 @@ function psource_support_update_ticket_category( $ticket_category_id, $args = ar
 
 	$result = psource_support_update_ticket_category_row( $ticket_category_id, $update, $update_wildcards );
 
-	if ( ! $result )
+	if ( false === $result )
 		return false;
+
+	if ( isset( $assignee_ids ) ) {
+		psource_support_save_category_team( $ticket_category, $assignee_ids );
+	} elseif ( $single_assignment ) {
+		delete_network_option( $ticket_category->site_id, psource_support_category_team_option_name( $ticket_category ) );
+	}
 
 	psource_support_clean_ticket_category_cache( $ticket_category_id );
 
@@ -251,7 +410,8 @@ function psource_support_update_ticket_category( $ticket_category_id, $args = ar
 }
 
 function psource_support_get_default_ticket_category() {
-	$cache_key = 'support_system_default_ticket_category_' . psource_support_get_data_blog_id();
+	$network_id = is_multisite() ? get_current_network_id() : 1;
+	$cache_key = 'support_system_default_ticket_category_' . $network_id . '_' . psource_support_get_data_blog_id();
 	$default_category = wp_cache_get( $cache_key, 'support_system_ticket_categories' );
 
 	if ( $default_category )
@@ -298,7 +458,7 @@ function psource_support_set_default_ticket_category( $ticket_category_id ) {
 		array( '%d' )
 	);
 
-	wp_cache_delete( 'support_system_default_ticket_category_' . $ticket_category->blog_id, 'support_system_ticket_categories' );
+	wp_cache_delete( 'support_system_default_ticket_category_' . $ticket_category->site_id . '_' . $ticket_category->blog_id, 'support_system_ticket_categories' );
 	psource_support_clean_ticket_category_cache( $ticket_category_id );
 	psource_support_clean_ticket_category_cache( $default_category->cat_id );
 
@@ -332,6 +492,7 @@ function psource_support_delete_ticket_category( $ticket_category_id ) {
 	}
 
 	psource_support_delete_ticket_category_row( $ticket_category_id );
+	delete_network_option( $ticket_category->site_id, psource_support_category_team_option_name( $ticket_category ) );
 
 	psource_support_clean_ticket_category_cache( $ticket_category_id );
 
@@ -349,6 +510,7 @@ function psource_support_clean_ticket_category_cache( $ticket_category ) {
 
 	wp_cache_delete( $ticket_category->cat_id, 'support_system_ticket_categories' );
 	wp_cache_delete( $ticket_category->cat_id, 'support_system_ticket_categories_counts' );
+	wp_cache_delete( 'support_system_default_ticket_category_' . $ticket_category->site_id . '_' . $ticket_category->blog_id, 'support_system_ticket_categories' );
 
 	do_action( 'support_system_clean_ticket_category_cache', $ticket_category );
 }

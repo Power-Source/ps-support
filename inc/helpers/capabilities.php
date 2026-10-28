@@ -12,6 +12,12 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 
 	$settings = psource_support_get_settings();
 	$is_selected_agent = false;
+	$ticket_caps = array( 'read_ticket', 'insert_reply', 'reply_ticket', 'assign_ticket', 'label_ticket', 'update_ticket', 'open_ticket', 'close_ticket' );
+	$args = array_slice( func_get_args(), 2 );
+	if ( in_array( $cap, $ticket_caps, true ) && ! empty( $args[0] ) ) {
+		$ticket = psource_support_get_ticket( absint( $args[0] ) );
+		$is_selected_agent = $ticket && psource_support_user_handles_team_ticket( $user_id, $ticket );
+	}
 
 	$user_can = false;
 	if ( ( is_multisite() && is_super_admin( $user_id ) ) || ( ! is_multisite() && user_can( $user_id, 'manage_options' ) ) ) {
@@ -67,7 +73,7 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 			case 'insert_ticket':
 			case 'read_ticket':
 			case 'insert_reply': { 
-				if ( in_array( $user_role, $settings['psource_support_tickets_role'] ) )
+				if ( $is_selected_agent || in_array( $user_role, $settings['psource_support_tickets_role'] ) )
 					$user_can = true;
 				break; 
 			}
@@ -76,7 +82,7 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 			case 'reply_ticket':
 			case 'assign_ticket':
 			case 'label_ticket': {
-				if ( in_array( $current_blog_role, $staff_roles ) )
+				if ( $is_selected_agent || in_array( $current_blog_role, $staff_roles ) )
 					$user_can = true;
 				break;
 			}
@@ -102,7 +108,7 @@ function psource_support_user_can( $user_id, $cap = '' ) {
 			case 'insert_ticket_category': 
 			case 'update_ticket_category': 
 			case 'delete_ticket_category': { 
-				$user_can = false;
+				$user_can = psource_support_get_data_blog_id() > 0 && user_can( $user_id, 'manage_options' );
 				break;
 			}
 

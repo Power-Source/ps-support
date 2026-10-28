@@ -22,7 +22,7 @@ class PSource_Support_Network_Settings_Menu extends PSource_Support_Admin_Menu {
 			return;
 		}
 
-		wp_enqueue_style( 'support-menu-styles', PSOURCE_SUPPORT_PLUGIN_URL . 'admin/assets/css/support-menu.css', array(), PSOURCE_SUPPORT_PLUGIN_VERSION );
+		wp_enqueue_style( 'support-menu-styles', PSOURCE_SUPPORT_PLUGIN_URL . 'admin/assets/css/support-menu.css', array(), filemtime( PSOURCE_SUPPORT_PLUGIN_DIR . 'admin/assets/css/support-menu.css' ) );
 		psource_support_enqueue_admin_script();
 	}
 

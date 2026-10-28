@@ -108,7 +108,7 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 		$args = array();
 
 		if ( isset( $_POST['super-admins'] ) ) {
-			$admin_id = psource_support_get_valid_ticket_admin_id( wp_unslash( $_POST['super-admins'] ) );
+			$admin_id = psource_support_get_valid_ticket_admin_id( wp_unslash( $_POST['super-admins'] ), $ticket );
 			if ( $admin_id !== false ) {
 				$args['admin_id'] = $admin_id;
 			}
@@ -134,12 +134,12 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 			psource_support_restore_ticket_previous_status( $ticket_id );
 		}
 
-		if ( psource_support_current_user_can( 'update_ticket' ) ) {
+		if ( psource_support_current_user_can( 'update_ticket', $ticket_id ) ) {
 			psource_support_update_ticket( $ticket_id, $args );
 		}
 
 		// Save labels
-		if ( psource_support_current_user_can( 'label_ticket' ) ) {
+		if ( psource_support_current_user_can( 'label_ticket', $ticket_id ) ) {
 			$label_ids = array();
 			if ( isset( $_POST['ticket_labels'] ) && is_array( $_POST['ticket_labels'] ) ) {
 				$label_ids = array_map( 'absint', $_POST['ticket_labels'] );
@@ -165,7 +165,7 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 		if ( ! $ticket )
 			wp_die( __( 'Das Ticket existiert nicht', 'psource-support' ) );
 
-		$is_internal = ( isset( $_POST['is_internal'] ) && psource_support_current_user_can( 'update_ticket' ) ) ? 1 : 0;
+		$is_internal = ( isset( $_POST['is_internal'] ) && psource_support_current_user_can( 'update_ticket', $ticket_id ) ) ? 1 : 0;
 
 		$reply_args = array(
 			'poster_id'   => get_current_user_id(),
@@ -219,11 +219,11 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 			}
 		}
 
-		if ( psource_support_current_user_can( 'update_ticket' ) ) {
+		if ( psource_support_current_user_can( 'update_ticket', $ticket_id ) ) {
 			psource_support_update_ticket( $ticket->ticket_id, $ticket_args );
 		}
 
-		if ( psource_support_current_user_can( 'insert_reply' ) ) {
+		if ( psource_support_current_user_can( 'insert_reply', $ticket_id ) ) {
 			psource_support_insert_ticket_reply( $ticket->ticket_id, $reply_args );
 		}
 
@@ -293,11 +293,11 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 		if ( ! $ticket )
 			wp_die( __( 'The ticket does not exist', 'psource-support' ) );
 
-		if ( ! $ticket->view_by_super_admin && psource_support_current_user_can( 'update_ticket' ) )
+		if ( ! $ticket->view_by_super_admin && psource_support_current_user_can( 'update_ticket', $ticket->ticket_id ) )
 			psource_support_update_ticket( $ticket->ticket_id, array( 'view_by_superadmin' => 1 ) );
 
 
-		$user_can_update_ticket = psource_support_current_user_can( 'update_ticket' );
+		$user_can_update_ticket = psource_support_current_user_can( 'update_ticket', $ticket->ticket_id );
 		$user_can_close_ticket = psource_support_current_user_can( 'close_ticket', $ticket->ticket_id );
 
 		$screen = get_current_screen();
@@ -399,13 +399,14 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 	public function render_update_metabox( $ticket_id ) {
 		$ticket = psource_support_get_ticket( $ticket_id );
 
-        if ( psource_support_current_user_can( 'update_ticket' ) ) {
+        if ( psource_support_current_user_can( 'update_ticket', $ticket_id ) ) {
 	        // Super admins dropdown
 	        $super_admins_dropdown = psource_support_super_admins_dropdown( 
 				array( 
 					'show_empty' => __( 'Noch nicht zugewiesen', 'psource-support' ) ,
 					'echo' => false,
-					'selected' => $ticket->get_staff_login()
+					'selected' => $ticket->get_staff_login(),
+					'ticket_id' => $ticket_id,
 				) 
 			);
 
@@ -457,7 +458,7 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 		}
 
 		// Labels
-		if ( psource_support_current_user_can( 'label_ticket' ) ) {
+		if ( psource_support_current_user_can( 'label_ticket', $ticket_id ) ) {
 			$all_labels = psource_support_get_labels();
 			if ( ! empty( $all_labels ) ) {
 				$current_label_ids = psource_support_get_ticket_label_ids( $ticket->ticket_id );
@@ -486,7 +487,7 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 		if ( ! $ticket )
 			wp_die( __( 'Das Ticket existiert nicht', 'psource-support' ) );
 
-		if ( ! $ticket->view_by_super_admin && psource_support_current_user_can( 'update_ticket' ) )
+		if ( ! $ticket->view_by_super_admin && psource_support_current_user_can( 'update_ticket', $ticket->ticket_id ) )
 			psource_support_update_ticket( $ticket->ticket_id, array( 'view_by_superadmin' => 1 ) );
 
 
@@ -520,7 +521,7 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 			$ticket_message = wpautop( stripslashes_deep( $_POST['message-text'] ) );
 
 
-		if ( psource_support_current_user_can( 'update_ticket' ) ) {
+		if ( psource_support_current_user_can( 'update_ticket', $ticket->ticket_id ) ) {
 			// Categories dropdown
 			$categories_dropdown = psource_support_ticket_categories_dropdown(
 				array(
@@ -551,7 +552,7 @@ class PSource_Support_Parent_Support_Menu extends PSource_Support_Admin_Menu {
 
 		include_once( 'views/edit-ticket-history-metabox.php' );
 
-		if ( psource_support_current_user_can( 'insert_reply' ) && ! $ticket->is_closed() )
+		if ( psource_support_current_user_can( 'insert_reply', $ticket->ticket_id ) && ! $ticket->is_closed() )
 			include( 'views/edit-ticket-history.php' );
 	}
 

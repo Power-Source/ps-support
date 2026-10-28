@@ -1,5 +1,6 @@
 <?php settings_errors( 'support_system_submit_new_ticket' ); ?>
 <form method="post" action="" enctype="multipart/form-data">
+	<?php PSource_Support_Bot::ticket_ui(); ?>
 	<table class="form-table">
 		
 		<p><span class="description"><?php _e( '* alle Felder sind erforderlich.', 'psource-support' ); ?></span></p>

@@ -130,6 +130,7 @@ class PSource_Support_Submit_Ticket_Form_Shortcode extends PSource_Support_Short
 			?>
 				<h2><?php _e( 'Sende ein neues Ticket', 'psource-support' ); ?></h2>
 				<form method="post" id="support-system-ticket-form" action="#support-system-ticket-form-wrap" enctype="multipart/form-data">
+					<?php PSource_Support_Bot::ticket_ui(); ?>
 					
 					<input type="text" name="support-system-ticket-subject" value="" placeholder="<?php esc_attr_e( 'Betreff', 'psource-support' ); ?>"/>
 					<br/>

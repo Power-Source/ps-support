@@ -83,6 +83,18 @@ function psource_support_super_admins_dropdown( $args = array() ) {
 
 	$plugin = psource_support();
 	$super_admins = MU_Support_System::get_super_admins();
+	if ( ! empty( $args['ticket_id'] ) ) {
+		$ticket = psource_support_get_ticket( absint( $args['ticket_id'] ) );
+		$category = psource_support_get_ticket_category_for_ticket( $ticket );
+		if ( psource_support_category_has_team( $category ) ) {
+			foreach ( psource_support_get_category_assignee_ids( $category ) as $user_id ) {
+				$login = get_userdata( $user_id )->user_login;
+				if ( ! in_array( $login, $super_admins, true ) ) {
+					$super_admins[] = $login;
+				}
+			}
+		}
+	}
 
 	$name       = $args['name'];
 	$id         = $args['id'];
@@ -121,8 +133,18 @@ function psource_support_assignees_dropdown( $args = array() ) {
 		'show_empty' => __( 'Keine', 'psource-support' ),
 		'selected' => 0,
 		'echo' => true,
+		'multiple' => false,
+		'category_assignment' => false,
 	);
 	$args = wp_parse_args( $args, $defaults );
+	if ( $args['multiple'] && $args['category_assignment'] ) {
+		$html = psource_support_user_picker( $args['name'], $args['id'] ? $args['id'] : 'category-assignees', (array) $args['selected'], 'category' );
+		if ( $args['echo'] ) {
+			echo $html;
+			return;
+		}
+		return $html;
+	}
 	$name       = $args['name'];
 	$id         = $args['id'];
 	$show_empty = $args['show_empty'];
@@ -133,21 +155,22 @@ function psource_support_assignees_dropdown( $args = array() ) {
 		$id = $name;
 	}
 
-	$selected = absint( $selected );
-	$assignees = psource_support_get_available_assignees();
+	$multiple = (bool) $args['multiple'];
+	$selected = array_map( 'absint', (array) $selected );
+	$assignees = $args['category_assignment'] ? psource_support_get_category_available_assignees() : psource_support_get_available_assignees();
 
 	if ( ! $echo ) {
 		ob_start();
 	}
 
 	?>
-	<select name="<?php echo esc_attr( $name ); ?>" id="<?php echo esc_attr( $id ); ?>">
-		<?php if ( ! empty( $show_empty ) ) : ?>
-			<option value="0" <?php selected( 0, $selected ); ?>><?php echo esc_html( $show_empty ); ?></option>
+	<select name="<?php echo esc_attr( $name ); ?>" id="<?php echo esc_attr( $id ); ?>" <?php if ( $multiple ) echo 'multiple size="6"'; ?>>
+		<?php if ( ! empty( $show_empty ) && ! $multiple ) : ?>
+			<option value="0" <?php selected( in_array( 0, $selected, true ) ); ?>><?php echo esc_html( $show_empty ); ?></option>
 		<?php endif; ?>
 
 		<?php foreach ( $assignees as $assignee ) : ?>
-			<option value="<?php echo esc_attr( absint( $assignee['user_id'] ) ); ?>" <?php selected( absint( $assignee['user_id'] ), $selected ); ?>>
+			<option value="<?php echo esc_attr( absint( $assignee['user_id'] ) ); ?>" <?php selected( in_array( absint( $assignee['user_id'] ), $selected, true ) ); ?>>
 				<?php echo esc_html( $assignee['label'] ); ?>
 			</option>
 		<?php endforeach; ?>
@@ -157,6 +180,42 @@ function psource_support_assignees_dropdown( $args = array() ) {
 	if ( ! $echo ) {
 		return ob_get_clean();
 	}
+}
+
+/**
+ * Render only selected people; suggestions are requested while typing.
+ *
+ * @param string $name Input name.
+ * @param string $id Search input ID.
+ * @param array  $selected Selected user IDs.
+ * @param string $kind Category candidates or existing support staff.
+ * @return string
+ */
+function psource_support_user_picker( $name, $id, $selected, $kind = 'staff' ) {
+	ob_start();
+	?>
+	<div class="ps-support-user-picker" data-name="<?php echo esc_attr( $name ); ?>" data-kind="<?php echo esc_attr( $kind ); ?>">
+		<ul class="ps-support-picked" aria-label="<?php esc_attr_e( 'Ausgewähltes Team', 'psource-support' ); ?>">
+			<?php foreach ( array_unique( array_map( 'absint', $selected ) ) as $user_id ) :
+				$user = get_userdata( $user_id );
+				if ( ! $user ) continue;
+				$label = $user->display_name . ' (@' . $user->user_login . ')';
+				?>
+				<li data-user-id="<?php echo (int) $user_id; ?>">
+					<input type="hidden" name="<?php echo esc_attr( $name ); ?>" value="<?php echo (int) $user_id; ?>">
+					<span><?php echo esc_html( $label ); ?></span>
+					<button type="button" class="ps-support-remove" aria-label="<?php echo esc_attr( __( 'Entfernen:', 'psource-support' ) . ' ' . $label ); ?>"><?php esc_html_e( 'Entfernen', 'psource-support' ); ?></button>
+				</li>
+			<?php endforeach; ?>
+		</ul>
+		<label class="screen-reader-text" for="<?php echo esc_attr( $id ); ?>"><?php esc_html_e( 'Person zum Team hinzufügen', 'psource-support' ); ?></label>
+		<input type="search" class="regular-text ps-support-person-search" id="<?php echo esc_attr( $id ); ?>" placeholder="<?php esc_attr_e( 'Name eingeben und Person hinzufügen', 'psource-support' ); ?>" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="<?php echo esc_attr( $id . '-results' ); ?>" aria-describedby="<?php echo esc_attr( $id . '-status' ); ?>">
+		<ul class="ps-support-person-results" id="<?php echo esc_attr( $id . '-results' ); ?>" role="listbox" aria-label="<?php esc_attr_e( 'Suchtreffer', 'psource-support' ); ?>" hidden></ul>
+		<p class="description ps-support-picker-status" id="<?php echo esc_attr( $id . '-status' ); ?>" role="status"><?php esc_html_e( 'Mindestens zwei Zeichen eingeben. Nur ausgewählte Personen werden dem Team hinzugefügt.', 'psource-support' ); ?></p>
+		<noscript><p><?php esc_html_e( 'JavaScript ist zum Hinzufügen und Entfernen von Personen erforderlich. Vorhandene Zuordnungen bleiben erhalten.', 'psource-support' ); ?></p></noscript>
+	</div>
+	<?php
+	return ob_get_clean();
 }
 
 function psource_support_get_available_assignee_user_ids() {
@@ -353,4 +412,3 @@ function psource_support_add_integrator( $classname ) {
 		$plugin->add_integrator( $r->newInstance() );
 	}
 }
-

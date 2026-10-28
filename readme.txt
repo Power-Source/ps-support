@@ -118,6 +118,23 @@ Ja. Wenn passende SmartCRM-Tabellen vorhanden sind, kann die Bearbeiterliste aus
 == Changelog ==
 
 = 1.0.2 =
+* Bedienung: Einheitliche Autovervollstaendigung mit Hinzufuegen/Entfernen fuer Kategorie-Teams und Supportchat-Standardteam statt Mehrfach- und Checkboxlisten; nur ausgewaehlte Personen sichtbar
+* PHP: Veralteten (boolean)-Cast durch (bool) ersetzt, um Deprecation-Meldungen bei AJAX-Aufrufen zu vermeiden
+* Supportchat-Einstellungen: fehlende Fallback-Mitarbeiter und ungueltige Aufbewahrungsfristen vorab inline pruefen; AJAX-Fehler erhalten Eingaben, ohne JavaScript Rueckkehr mit Entwurf statt wp_die-Fehlerseite
+* Optionaler regelbasierter Support-Bot mit einfachen Themenkarten im neuen Einstellungen-Tab; separat fuer Chat und Tickets aktivierbar, standardmaessig ausgeschaltet
+* Bot-Konfiguration zentral/netzwerkweit oder lokal pro Site, kategoriengetrennt; oeffentliche Klartext-API fuer PS Chat
+* Bot vor Frontend- und Admin-Ticketformularen mit geloest/neu starten/ueberspringen und ausdruecklicher, bearbeitbarer Uebergabe ohne automatische Tickets oder E-Mails
+* Bot-Einstellungen mit Inline-Validierung und Eingabe-Erhalt bei Fehlern; bestehende Antwort-Templates unveraendert
+* Supportchat: Standardteam aus vorhandenen Support-Rollen, Kategorie-Teams und Administratoren bzw. CRM-Agenten; serverseitige Suche mit maximal 20 Treffern statt kompletter Benutzerliste
+* Darstellung: Einstellungen-Inhalte beginnen unter der gesamten Tab-Leiste; fehlerhaft geschlossenes Seiten-Heading korrigiert
+* Bedienung: Supportchat im vorhandenen Einstellungen-Tab statt separater Einstellungsseite; Mitarbeiter nach Namen auswaehlen
+* PS Chat: Supportchat-Einstellungen und Posteingang unter dem Support-Menue, auch bei inaktivem Chat-Plugin auffindbare Konfiguration
+* Supportchat: Netzwerk-Aktivierung, separate Subsite-Freigabe, Chatname und eigener Besucher-Hinweis; zentrale Support-Site automatisch beruecksichtigt
+* Zentrale Kategorie-Teams können registrierte Netzwerkbenutzer ohne Superadminrechte benennen; lokale und CRM-Auswahl bleiben unverändert
+* Ticketkategorien unterstützen mehrere Bearbeiter als netzwerk- und bloggetrenntes Team ohne Tabellenmigration
+* Teamtickets bleiben bis zur Zuweisung unzugewiesen; alle verfügbaren Mitglieder werden einzeln benachrichtigt
+* Kategoriebezogene Teamrechte und Sichtbarkeit bei „nur eigene Tickets“, ohne globale Mitarbeiterrechte
+* Öffentliche Helfer für Kategorie-Bearbeiterlisten und Mitgliedschaft; bestehende Einzelzuweisungen bleiben kompatibel
 * Warnung durch fehlende Initialisierung von `$is_selected_agent` in der Rechtepruefung behoben
 
 = 1.0.1 =

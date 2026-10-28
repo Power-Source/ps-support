@@ -1,3 +1,71 @@
+.ps-support-user-picker {
+	max-width: 480px;
+}
+.ps-support-user-picker .ps-support-picked {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0 0 8px;
+}
+.ps-support-picked li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 8px;
+	margin: 0;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	background: #fff;
+	overflow-wrap: anywhere;
+}
+.ps-support-user-picker .ps-support-remove {
+	min-height: 44px;
+	cursor: pointer;
+}
+.ps-support-user-picker input[type="search"] {
+	width: 100%;
+	max-width: 100%;
+	min-height: 44px;
+}
+.ps-support-person-results {
+	margin: 0;
+	max-height: 240px;
+	overflow-y: auto;
+	border: 1px solid #8c8f94;
+	background: #fff;
+}
+.ps-support-user-picker [hidden] { display: none !important; }
+.ps-support-person-results [role="option"] {
+	display: flex;
+	align-items: center;
+	min-height: 44px;
+	padding: 4px 10px;
+	margin: 0;
+	cursor: pointer;
+}
+.ps-support-person-results [aria-selected="true"],
+.ps-support-person-results [role="option"]:hover {
+	background: #2271b1;
+	color: #fff;
+}
+.ps-support-user-picker button:focus-visible,
+.ps-support-user-picker input:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+.psource-support-settings-tabs {
+	display: flow-root;
+	clear: both;
+	width: 100%;
+	box-sizing: border-box;
+	margin-bottom: 16px;
+}
+
+.psource-support-settings-tabs + * {
+	clear: both;
+}
+
 #support-attachments-list {
 	margin:0;
 }

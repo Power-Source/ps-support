@@ -82,7 +82,7 @@ class PSource_Support_Settings {
 				unset( $menus['admin_network_faq_menu'] );
 			}
 
-			if ( isset( $menus['admin_support_menu'] ) && ! psource_support_current_user_can( 'read_ticket' ) ) {
+			if ( isset( $menus['admin_support_menu'] ) && ! psource_support_current_user_can( 'read_ticket' ) && ! psource_support_get_user_category_ids( get_current_user_id() ) ) {
 				unset( $menus['admin_support_menu'] );
 			}
 
@@ -124,8 +124,10 @@ class PSource_Support_Settings {
 
 	public function filter_admin_tickets_table( $args ) {
 		$privacy = psource_support_get_setting( 'psource_ticket_privacy' );
-		if ( 'requestor' === $privacy && ! psource_support_current_user_can( 'manage_options' ) )
+		if ( ( 'requestor' === $privacy || ! psource_support_current_user_can( 'read_ticket' ) ) && ! psource_support_current_user_can( 'manage_options' ) ) {
 			$args['user_in'] = array( get_current_user_id() );
+			$args['handler_category_ids'] = psource_support_get_user_category_ids( get_current_user_id() );
+		}
 
 		return $args;
 	}
@@ -135,8 +137,10 @@ class PSource_Support_Settings {
 		if ( function_exists( 'psource_support_is_subsite_frontend' ) && psource_support_is_subsite_frontend() ) {
 			$args['blog_id'] = get_current_blog_id();
 		}
-		if ( 'requestor' === $privacy && ! psource_support_current_user_can( 'manage_options' ) )
+		if ( ( 'requestor' === $privacy || ! psource_support_current_user_can( 'read_ticket' ) ) && ! psource_support_current_user_can( 'manage_options' ) ) {
 			$args['user_in'] = array( get_current_user_id() );
+			$args['handler_category_ids'] = psource_support_get_user_category_ids( get_current_user_id() );
+		}
 
 		return $args;
 	}

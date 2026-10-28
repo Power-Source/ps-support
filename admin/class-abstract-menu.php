@@ -37,7 +37,7 @@ abstract class PSource_Support_Admin_Menu {
              * @param string $admin_page_title The admin page title
              * @param string $page_id The admin page ID
              */
-            echo apply_filters('support_system_admin_page_title', '<h2>' . esc_html(get_admin_page_title()) . '</h2', $this->page_id);
+            echo apply_filters('support_system_admin_page_title', '<h2>' . esc_html(get_admin_page_title()) . '</h2>', $this->page_id);
             ?>
 
             <?php $this->render_inner_page(); ?>

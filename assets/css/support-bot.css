@@ -1,0 +1,20 @@
+.ps-support-bot {
+	border: 1px solid #c3c4c7;
+	border-radius: 6px;
+	padding: 1rem;
+	margin: 1rem 0;
+	background: #fff;
+	color: #1d2327;
+}
+.ps-support-bot .ps-bot-topics,
+.ps-support-bot .ps-bot-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: .75rem 0; }
+.ps-support-bot .ps-bot-answer,
+.ps-support-bot .ps-bot-status { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ps-support-bot [hidden], .ps-bot-settings [hidden] { display: none !important; }
+.ps-bot-settings-form { max-width: 850px; }
+.ps-bot-settings-form > label,
+.ps-bot-topic-row label { display: block; margin: .75rem 0; }
+.ps-bot-settings-form input[type="text"],
+.ps-bot-settings-form textarea,
+.ps-bot-settings-form select { display: block; width: 100%; max-width: 100%; }
+.ps-bot-topic-row { border: 1px solid #c3c4c7; padding: 1rem; margin: 1rem 0; }

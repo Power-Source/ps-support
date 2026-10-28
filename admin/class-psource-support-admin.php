@@ -194,4 +194,3 @@ class PSource_Support_Admin {
 		}
 	}
 }
-

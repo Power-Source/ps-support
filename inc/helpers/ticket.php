@@ -65,12 +65,20 @@ function psource_support_get_valid_ticket_category_id( $category_id ) {
 	return $category->cat_id;
 }
 
-function psource_support_get_valid_ticket_admin_id( $staff_name ) {
+function psource_support_get_valid_ticket_admin_id( $staff_name, $ticket = null ) {
 	if ( $staff_name === '' || $staff_name === null ) {
 		return 0;
 	}
 
 	$possible_users = MU_Support_System::get_super_admins();
+	if ( $ticket ) {
+		$category = psource_support_get_ticket_category_for_ticket( $ticket );
+		if ( psource_support_category_has_team( $category ) ) {
+			foreach ( psource_support_get_category_assignee_ids( $category ) as $user_id ) {
+				$possible_users[] = get_userdata( $user_id )->user_login;
+			}
+		}
+	}
 	if ( ! in_array( $staff_name, $possible_users ) ) {
 		return false;
 	}
@@ -83,10 +91,46 @@ function psource_support_get_valid_ticket_admin_id( $staff_name ) {
 	return (int) $user->data->ID;
 }
 
+/**
+ * Resolve a ticket's category independently of the current admin/frontend data scope.
+ *
+ * @param PSource_Support_Ticket $ticket Ticket.
+ * @return PSource_Support_Ticket_Category|false
+ */
+function psource_support_get_ticket_category_for_ticket( $ticket ) {
+	global $wpdb;
+	$network_id = is_multisite() ? get_current_network_id() : 1;
+	if ( ! $ticket || (int) $ticket->site_id !== (int) $network_id ) {
+		return false;
+	}
+	$row = $wpdb->get_row( $wpdb->prepare(
+		'SELECT * FROM ' . psource_support_get_ticket_category_table() . ' WHERE cat_id = %d AND site_id = %d AND (blog_id = 0 OR blog_id = %d) LIMIT 1',
+		$ticket->cat_id, $network_id, $ticket->blog_id
+	) );
+	return $row ? psource_support_get_ticket_category( $row ) : false;
+}
+
+/**
+ * @param int                   $user_id User ID.
+ * @param PSource_Support_Ticket $ticket Ticket.
+ * @return bool
+ */
+function psource_support_user_handles_team_ticket( $user_id, $ticket ) {
+	$category = psource_support_get_ticket_category_for_ticket( $ticket );
+	$scope = psource_support_get_data_blog_id();
+	if ( ! $category || ( $scope && ( (int) $ticket->blog_id !== $scope || (int) $category->blog_id !== $scope ) ) ) {
+		return false;
+	}
+	return psource_support_user_can_handle_category( $user_id, $category );
+}
+
 function psource_support_get_ticket_status_after_reply( $ticket, $poster_id ) {
 	$poster_id = absint( $poster_id );
 
 	if ( $ticket->admin_id && $ticket->admin_id === $poster_id && $ticket->user_id != $ticket->admin_id ) {
+		return 2;
+	}
+	if ( $ticket->user_id !== $poster_id && psource_support_user_handles_team_ticket( $poster_id, $ticket ) ) {
 		return 2;
 	}
 
@@ -167,7 +211,14 @@ function psource_support_build_tickets_query_parts( $args ) {
 
 	if ( ! empty( $args['user_in'] ) && is_array( $args['user_in'] ) ) {
 		$user_in = array_map( 'absint', $args['user_in'] );
-		$where[] = "t.user_id IN (" . implode( ',', $user_in ) . ")";
+		$visibility = "t.user_id IN (" . implode( ',', $user_in ) . ")";
+		if ( ! empty( $args['handler_category_ids'] ) ) {
+			$category_ids = array_filter( array_map( 'absint', (array) $args['handler_category_ids'] ) );
+			if ( $category_ids ) {
+				$visibility .= ' OR t.cat_id IN (' . implode( ',', $category_ids ) . ')';
+			}
+		}
+		$where[] = '(' . $visibility . ')';
 	}
 
 	if ( $args['view_by_superadmin'] !== null )
@@ -230,6 +281,7 @@ function psource_support_get_ticket_rows( $args ) {
 		'admin_id' => false,
 		'has_admin' => null,
 		'user_in' => false,
+		'handler_category_ids' => array(),
 		'category' => false,
 		'category_in' => false,
 		'priority' => false,
@@ -574,13 +626,11 @@ function psource_support_insert_ticket( $args = array() ) {
 	// CATEGORY
 	$category = psource_support_get_ticket_category( absint( $args['cat_id'] ) );
 	if ( ! $category ) {
-		$insert['cat_id'] = $default_category->cat_id;
+		$category = $default_category;
 	}
-	else {
-		$insert['cat_id'] = $category->cat_id;
-		$assigned_staff = $category->user_id;
-		if ( get_userdata( $assigned_staff ) )
-			$insert['admin_id'] = $category->user_id;
+	$insert['cat_id'] = $category->cat_id;
+	if ( ! psource_support_category_has_team( $category ) && get_userdata( $category->user_id ) ) {
+		$insert['admin_id'] = $category->user_id;
 	}
 
 	// LAST REPLY ID
@@ -816,7 +866,7 @@ function psource_support_get_user_ticket_url( $ticket_id, $user_id = false ) {
 		return false;
 
 	// Check the user role
-	$user_can = psource_support_user_can( $user_id, 'read_ticket' );
+	$user_can = psource_support_user_can( $user_id, 'read_ticket', $ticket_id );
 	if ( ! $user_can )
 		return false;
 

@@ -15,13 +15,13 @@ class PSource_Support_Tickets_Index_Shortcode extends PSource_Support_Shortcode 
 	}
 
 	protected function maybe_handle_ticket_details_update() {
-		if ( ! isset( $_POST['submit-ticket-details'] ) || ! psource_support_current_user_can( 'update_ticket' ) ) {
+		if ( ! isset( $_POST['submit-ticket-details'] ) ) {
 			return;
 		}
 
 		$ticket_id = absint( $_POST['ticket_id'] );
 		$ticket = psource_support_get_ticket( $ticket_id );
-		if ( ! psource_support_ticket_is_available_on_current_frontend( $ticket ) ) {
+		if ( ! psource_support_ticket_is_available_on_current_frontend( $ticket ) || ! psource_support_current_user_can( 'update_ticket', $ticket_id ) ) {
 			return;
 		}
 
@@ -41,7 +41,7 @@ class PSource_Support_Tickets_Index_Shortcode extends PSource_Support_Shortcode 
 			$args['ticket_priority'] = $priority;
 		}
 
-		$admin_id = psource_support_get_valid_ticket_admin_id( isset( $_POST['ticket-staff'] ) ? wp_unslash( $_POST['ticket-staff'] ) : '' );
+		$admin_id = psource_support_get_valid_ticket_admin_id( isset( $_POST['ticket-staff'] ) ? wp_unslash( $_POST['ticket-staff'] ) : '', $ticket );
 		if ( $admin_id !== false ) {
 			$args['admin_id'] = $admin_id;
 		}
@@ -80,7 +80,7 @@ class PSource_Support_Tickets_Index_Shortcode extends PSource_Support_Shortcode 
 	}
 
 	protected function maybe_handle_front_reply_submission() {
-		if ( ! isset( $_POST['support-system-submit-reply'] ) || ! psource_support_current_user_can( 'insert_reply' ) ) {
+		if ( ! isset( $_POST['support-system-submit-reply'] ) ) {
 			return;
 		}
 
@@ -100,6 +100,9 @@ class PSource_Support_Tickets_Index_Shortcode extends PSource_Support_Shortcode 
 		$ticket = psource_support_get_ticket( $ticket_id );
 		if ( ! psource_support_ticket_is_available_on_current_frontend( $ticket ) )
 			wp_die( __( 'Das Ticket existiert nicht', 'psource-support' ) );
+		if ( ! psource_support_current_user_can( 'insert_reply', $ticket_id ) ) {
+			return;
+		}
 
 		if ( $user_id != get_current_user_id() )
 			wp_die( __( 'Sicherheitsüberprüfungsfehler', 'psource-support' ) );
@@ -143,7 +146,12 @@ class PSource_Support_Tickets_Index_Shortcode extends PSource_Support_Shortcode 
 	public function render( $atts ) {
 		$this->start();
 
-		if ( ! psource_support_current_user_can( 'read_ticket' ) ) {
+		$ticket_id = psource_support_is_single_ticket() ? psource_support()->query->ticket_id : 0;
+		$can_read = psource_support_current_user_can( 'read_ticket', $ticket_id );
+		if ( ! $ticket_id && ! $can_read ) {
+			$can_read = (bool) psource_support_get_user_category_ids( get_current_user_id() );
+		}
+		if ( ! $can_read ) {
 			if ( ! is_user_logged_in() )
 				$message = sprintf( __( 'Du musst <a href="%s">angemeldet</a> sein, um Support zu erhalten', 'psource-support' ), wp_login_url( get_permalink() ) );
 			else

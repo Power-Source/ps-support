@@ -101,11 +101,16 @@ class PSource_Support_Ticket_Categories_Table extends WP_List_Table {
     }
 
     function column_user( $item ) {
-        $user_login = __( 'Keinem', 'psource-support' );
-        if ( $user = get_user_by( 'id', $item->user_id ) )
-            $user_login = $user->data->user_login;
-
-        return $user_login;
+        $names = array();
+        foreach ( psource_support_get_category_assignee_ids( $item ) as $user_id ) {
+            $user = get_userdata( $user_id );
+            $names[] = $user->user_login;
+        }
+        $label = $names ? implode( ', ', $names ) : __( 'Keinem', 'psource-support' );
+        if ( psource_support_category_has_team( $item ) ) {
+            $label = __( 'Team', 'psource-support' ) . ': ' . $label;
+        }
+        return esc_html( $label );
     }
 
 

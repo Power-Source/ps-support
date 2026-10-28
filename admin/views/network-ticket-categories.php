@@ -19,15 +19,16 @@
 				<h3><?php _e( 'Neue Kategorie hinzufügen', 'psource-support' ); ?></h3>
 				<form id="categories-table-form" action="" method="post">
 					<?php wp_nonce_field( 'add-ticket-category' ); ?>
+					<input type="hidden" name="category_assignees_present" value="1">
 					<div class="form-field">
 						<label for="cat_name"><?php _e( 'Kategoriename', 'psource-support' ); ?></label>
 						<input name="cat_name" id="cat_name" type="text" value="<?php echo $category_name; ?>" size="40" aria-required="true"><br/>
 						<p><?php _e('Der Name wird verwendet, um die Kategorie zu identifizieren, auf die sich Tickets beziehen', 'psource-support' ); ?></p>
 					</div>
 					<div class="form-field">
-						<label for="admin_user"><?php _e( 'Dem Benutzer zuweisen', 'psource-support' ); ?></label>
+						<label for="category-assignees"><?php _e( 'Bearbeiter / Team', 'psource-support' ); ?></label>
 						<?php echo $super_admins_dropdown; ?>
-						<p><?php _e( 'Jedes neu eröffnete Ticket mit dieser Kategorie wird diesem Benutzer zugewiesen', 'psource-support' ); ?></p>
+						<p><?php _e( 'Eine Person: automatische Zuweisung. Mehrere Personen: Team benachrichtigen, Ticket bleibt bis zur Übernahme unzugewiesen.', 'psource-support' ); ?></p>
 					</div>
 					<?php submit_button( __( 'neue Kategorie hinzufügen', 'psource-support' ), 'primary', 'submit-new-ticket-category' ); ?>
 				</form>

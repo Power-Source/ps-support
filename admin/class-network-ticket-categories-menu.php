@@ -69,15 +69,35 @@ class PSource_Support_Network_Ticket_Categories extends PSource_Support_Admin_Me
 				$user_id = 0;
 			}
 
+			$assignee_ids = null;
+			if ( isset( $_POST['category_assignees_present'] ) ) {
+				$assignee_ids = psource_support_validate_category_assignee_ids(
+					isset( $_POST['assignee_user_ids'] ) ? wp_unslash( $_POST['assignee_user_ids'] ) : array()
+				);
+				if ( false === $assignee_ids ) {
+					add_settings_error( 'support_system_submit_category', 'invalid-team', __( 'Bitte wähle nur verfügbare Bearbeiter aus.', 'psource-support' ) );
+				}
+			}
+
 			if ( ! get_settings_errors( 'support_system_submit_category' ) ) {
 				if ( $add ) {
-					psource_support_insert_ticket_category( $category_name, $user_id );
+					if ( ! psource_support_insert_ticket_category( $category_name, $user_id, $assignee_ids ) ) {
+						add_settings_error( 'support_system_submit_category', 'category-save-failed', __( 'Die Kategorie konnte nicht gespeichert werden.', 'psource-support' ) );
+						return;
+					}
 					$redirect = add_query_arg( 'added', 'true', $this->get_menu_url() );
 					wp_redirect( $redirect );
 					exit();
 				}
 				elseif ( $edit ) {
-					psource_support_update_ticket_category( $ticket_category->cat_id, array( 'cat_name' => $category_name, 'user_id' => $user_id ) );
+					$args = array( 'cat_name' => $category_name, 'user_id' => $user_id );
+					if ( null !== $assignee_ids ) {
+						$args['assignee_ids'] = $assignee_ids;
+					}
+					if ( ! psource_support_update_ticket_category( $ticket_category->cat_id, $args ) ) {
+						add_settings_error( 'support_system_submit_category', 'category-save-failed', __( 'Die Kategorie konnte nicht gespeichert werden.', 'psource-support' ) );
+						return;
+					}
 					$redirect = add_query_arg( 
 						array( 
 							'updated' => 'true',
@@ -116,12 +136,22 @@ class PSource_Support_Network_Ticket_Categories extends PSource_Support_Admin_Me
 				$user = $posted_user ? absint( $posted_user->ID ) : 0;
 			}
 
-			$super_admins_dropdown = psource_support_assignees_dropdown( 
+			$selected_ids = psource_support_get_category_assignee_ids( $ticket_category );
+			if ( isset( $_POST['category_assignees_present'] ) ) {
+				$posted_ids = psource_support_validate_category_assignee_ids( isset( $_POST['assignee_user_ids'] ) ? wp_unslash( $_POST['assignee_user_ids'] ) : array() );
+				$selected_ids = false === $posted_ids ? array() : $posted_ids;
+			} elseif ( isset( $_POST['assignee_user_id'] ) || isset( $_POST['super-admins'] ) ) {
+				$selected_ids = array( $user );
+			}
+			$super_admins_dropdown = psource_support_assignees_dropdown(
 				array( 
-					'name' => 'assignee_user_id',
+					'name' => 'assignee_user_ids[]',
+					'id' => 'category-assignees',
+					'multiple' => true,
+					'category_assignment' => true,
 					'show_empty' => __( 'Keine', 'psource-support' ) ,
 					'echo' => false,
-					'selected' => $user
+					'selected' => $selected_ids
 				) 
 			);
 
@@ -147,12 +177,20 @@ class PSource_Support_Network_Ticket_Categories extends PSource_Support_Admin_Me
 				$user = $posted_user ? absint( $posted_user->ID ) : 0;
 			}
 
-			$super_admins_dropdown = psource_support_assignees_dropdown( 
+			$selected_ids = array( absint( $user ) );
+			if ( isset( $_POST['category_assignees_present'] ) ) {
+				$posted_ids = psource_support_validate_category_assignee_ids( isset( $_POST['assignee_user_ids'] ) ? wp_unslash( $_POST['assignee_user_ids'] ) : array() );
+				$selected_ids = false === $posted_ids ? array() : $posted_ids;
+			}
+			$super_admins_dropdown = psource_support_assignees_dropdown(
 				array( 
-					'name' => 'assignee_user_id',
+					'name' => 'assignee_user_ids[]',
+					'id' => 'category-assignees',
+					'multiple' => true,
+					'category_assignment' => true,
 					'show_empty' => __( 'Keine', 'psource-support' ) ,
 					'echo' => false,
-					'selected' => $user
+					'selected' => $selected_ids
 				) 
 			);
 

@@ -48,7 +48,7 @@
 			
 			<div class="large-4 columns">
 				<div class="row">
-					<?php if ( ! psource_support_is_staff() ): ?>
+					<?php if ( ! psource_support_is_staff() && ! psource_support_user_handles_team_ticket( get_current_user_id(), psource_support()->query->ticket ) ): ?>
 						
 						<?php 
 							echo psource_support_widget( 
