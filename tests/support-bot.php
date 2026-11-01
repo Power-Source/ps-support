@@ -48,6 +48,21 @@ try {
 	$valid = PSource_Support_Bot::validate( $raw, 0 );
 	$assert( ! is_wp_error( $valid ), 'Central categories must validate regardless of current scope override.' );
 	$assert( 'Helper' === $valid['name'] && 'billing' === $valid['topics'][0]['id'] && false === strpos( $valid['topics'][0]['answer'], '<b>' ), 'Public strings must be plain text.' );
+	$assert( $valid['topics'][0]['steps'][0]['type'] === 'message' && $valid['topics'][0]['steps'][0]['text'] === "Read this\nThen ask us.", 'Legacy answers must migrate to message steps.' );
+	$flow = $raw;
+	$flow['topics'][0]['answer'] = '';
+	$flow['topics'][0]['steps'] = array(
+		array( 'id' => 'start', 'type' => 'choice', 'text' => 'Choose', 'options' => array(
+			array( 'label' => 'Continue', 'next_step' => 'details' ),
+			array( 'label' => 'Finish', 'next_step' => 'done' ),
+		) ),
+		array( 'id' => 'details', 'type' => 'input', 'label' => 'Describe the issue', 'next_step' => 'help' ),
+		array( 'id' => 'help', 'type' => 'link', 'label' => 'Open guide', 'url' => 'https://example.invalid/guide', 'next_step' => 'done' ),
+		array( 'id' => 'done', 'type' => 'handoff' ),
+	);
+	$flow_valid = PSource_Support_Bot::validate( $flow, 0 );
+	$assert( ! is_wp_error( $flow_valid ) && count( $flow_valid['topics'][0]['steps'] ) === 4, 'Choice, input, link and handoff flow steps validate.' );
+	$assert( $flow_valid['topics'][0]['steps'][0]['options'][0]['next_step'] === 'details', 'Choice branches retain their configured target step.' );
 	$assert( array_keys( $valid ) === array( 'enabled_chat', 'enabled_tickets', 'name', 'greeting', 'topics' ), 'Public contract must expose exact keys.' );
 	update_site_option( PSource_Support_Bot::OPTION, $raw );
 	$local_raw = $raw;

@@ -45,6 +45,78 @@ class PSource_Support_Bot {
 		return $multiline ? sanitize_textarea_field( (string) $value ) : sanitize_text_field( (string) $value );
 	}
 
+	private static function steps( $raw, $legacy_answer = '' ) {
+		$types = array( 'message', 'choice', 'input', 'link', 'handoff', 'end' );
+		$steps = array();
+		$ids = array();
+		$raw = is_array( $raw ) ? array_slice( $raw, 0, 50 ) : array();
+
+		if ( ! $raw && '' !== $legacy_answer ) {
+			$raw = array( array( 'id' => 'step-1', 'type' => 'message', 'text' => $legacy_answer ) );
+		}
+
+		foreach ( $raw as $index => $step ) {
+			if ( ! is_array( $step ) ) {
+				continue;
+			}
+			$type = isset( $step['type'] ) && is_scalar( $step['type'] ) ? sanitize_key( $step['type'] ) : '';
+			if ( ! in_array( $type, $types, true ) ) {
+				continue;
+			}
+			$id = isset( $step['id'] ) && is_scalar( $step['id'] ) ? sanitize_key( $step['id'] ) : '';
+			if ( ! $id || isset( $ids[ $id ] ) ) {
+				$id = 'step-' . ( $index + 1 );
+				while ( isset( $ids[ $id ] ) ) {
+					$id .= '-next';
+				}
+			}
+			$ids[ $id ] = true;
+			$item = array(
+				'id' => $id,
+				'type' => $type,
+				'text' => self::text( isset( $step['text'] ) ? $step['text'] : '', true ),
+				'label' => self::text( isset( $step['label'] ) ? $step['label'] : '' ),
+				'next_step' => isset( $step['next_step'] ) && is_scalar( $step['next_step'] ) ? sanitize_key( $step['next_step'] ) : '',
+			);
+			if ( 'link' === $type ) {
+				$item['url'] = isset( $step['url'] ) && is_scalar( $step['url'] ) ? esc_url_raw( (string) $step['url'], array( 'http', 'https' ) ) : '';
+			}
+			if ( 'choice' === $type ) {
+				$item['options'] = array();
+				foreach ( array_slice( isset( $step['options'] ) && is_array( $step['options'] ) ? $step['options'] : array(), 0, 20 ) as $option ) {
+					if ( ! is_array( $option ) ) {
+						continue;
+					}
+					$label = self::text( isset( $option['label'] ) ? $option['label'] : '' );
+					if ( '' !== $label ) {
+						$item['options'][] = array(
+							'label' => $label,
+							'next_step' => isset( $option['next_step'] ) && is_scalar( $option['next_step'] ) ? sanitize_key( $option['next_step'] ) : '',
+						);
+					}
+				}
+			}
+			$steps[] = $item;
+		}
+
+		$known = wp_list_pluck( $steps, 'id' );
+		foreach ( $steps as &$step ) {
+			if ( $step['next_step'] && ! in_array( $step['next_step'], $known, true ) ) {
+				$step['next_step'] = '';
+			}
+			if ( isset( $step['options'] ) ) {
+				foreach ( $step['options'] as &$option ) {
+					if ( $option['next_step'] && ! in_array( $option['next_step'], $known, true ) ) {
+						$option['next_step'] = '';
+					}
+				}
+				unset( $option );
+			}
+		}
+		unset( $step );
+		return $steps;
+	}
+
 	/**
 	 * @param int $scope Zero for central support, otherwise a blog ID.
 	 * @return array Public configuration, with no inheritance or private settings.
@@ -82,7 +154,8 @@ class PSource_Support_Bot {
 			}
 			$title = self::text( isset( $row['title'] ) ? $row['title'] : '' );
 			$answer = self::text( isset( $row['answer'] ) ? $row['answer'] : '', true );
-			if ( '' === $title || '' === $answer ) {
+			$steps = self::steps( isset( $row['steps'] ) ? $row['steps'] : array(), $answer );
+			if ( '' === $title || ! $steps ) {
 				continue;
 			}
 			$id = isset( $row['id'] ) && is_scalar( $row['id'] ) ? sanitize_key( $row['id'] ) : '';
@@ -97,6 +170,7 @@ class PSource_Support_Bot {
 			$config['topics'][] = array(
 				'id' => $id, 'title' => $title, 'answer' => $answer,
 				'category_id' => in_array( $category, $valid, true ) ? $category : 0,
+				'steps' => $steps,
 			);
 		}
 		return $config;
@@ -116,8 +190,19 @@ class PSource_Support_Bot {
 		}
 		$valid = array_map( 'intval', wp_list_pluck( self::categories( $scope ), 'cat_id' ) );
 		foreach ( $input['topics'] as $row ) {
-			if ( ! is_array( $row ) || ! self::text( isset( $row['title'] ) ? $row['title'] : '' ) || ! self::text( isset( $row['answer'] ) ? $row['answer'] : '', true ) ) {
-				return new WP_Error( 'bot_row', __( 'Jedes Thema benötigt eine Frage und eine Antwort. Leere Zeilen bitte entfernen.', 'psource-support' ) );
+			if ( ! is_array( $row ) || ! self::text( isset( $row['title'] ) ? $row['title'] : '' ) ) {
+				return new WP_Error( 'bot_row', __( 'Jeder Ablauf benötigt einen Titel. Leere Zeilen bitte entfernen.', 'psource-support' ) );
+			}
+			$steps = self::steps( isset( $row['steps'] ) ? $row['steps'] : array(), self::text( isset( $row['answer'] ) ? $row['answer'] : '', true ) );
+			if ( ! $steps ) {
+				return new WP_Error( 'bot_steps', __( 'Jeder Ablauf benötigt mindestens einen vollständigen Schritt.', 'psource-support' ) );
+			}
+			foreach ( $steps as $step ) {
+				if ( ( in_array( $step['type'], array( 'message', 'choice', 'input' ), true ) && '' === $step['text'] && '' === $step['label'] )
+					|| ( 'choice' === $step['type'] && ! $step['options'] )
+					|| ( 'link' === $step['type'] && ( '' === $step['label'] || empty( $step['url'] ) ) ) ) {
+					return new WP_Error( 'bot_step', __( 'Bitte alle Schritte vollständig konfigurieren.', 'psource-support' ) );
+				}
 			}
 			$category = isset( $row['category_id'] ) ? $row['category_id'] : '0';
 			if ( ! is_scalar( $category ) || ! preg_match( '/^\d+$/', (string) $category ) || ( (int) $category && ! in_array( (int) $category, $valid, true ) ) ) {

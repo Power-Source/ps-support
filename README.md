@@ -2,15 +2,15 @@
 
 # PS Support System
 
+**Deutsch** | [English](README.en.md)
+
 **Ticket-Support, Wissensdatenbank und Helpdesk für WordPress- und ClassicPress-Netzwerke.**
 
-[![Version](https://img.shields.io/badge/Version-1.0.2-2271b1?style=flat-square)](readme.txt)
+[![Version](https://img.shields.io/badge/Version-1.0.3-2271b1?style=flat-square)](readme.txt)
 ![PHP](https://img.shields.io/badge/PHP-8.0%2B-777bb4?style=flat-square&logo=php&logoColor=white)
-![WordPress](https://img.shields.io/badge/WordPress-bis%207.1.0-21759b?style=flat-square&logo=wordpress&logoColor=white)
+![WordPress](https://img.shields.io/badge/WordPress-bis%207.1.4-21759b?style=flat-square&logo=wordpress&logoColor=white)
 ![ClassicPress](https://img.shields.io/badge/ClassicPress-2.7.4-03768e?style=flat-square)
 [![Lizenz](https://img.shields.io/badge/Lizenz-GPL--2.0--or--later-2ea44f?style=flat-square)](https://www.gnu.org/licenses/gpl-2.0.html)
-
-[Features](#features) · [Multisite](#multisite) · [Shortcodes](#shortcodes) · [Installation](#installation) · [Dokumentation](https://psource.eimen.net/wiki/ps-support-system-dokumentation/)
 
 </div>
 
@@ -63,7 +63,11 @@ Das Plugin funktioniert auf einzelnen Websites und ist besonders auf Multisite-N
 ### Privater Supportchat
 
 **Support → Einstellungen → Supportchat** enthält Aktivierung, Chatname,
-Platzierung, eigenen Besucher-Hinweis, Pflichtangaben und Aufbewahrungsfristen.
+Platzierung, die Position des schwebenden Chatbuttons, eigenen Besucher-Hinweis,
+Pflichtangaben und Aufbewahrungsfristen. Chatfenster sind zunächst geschlossen.
+Der Shortcode `[ps_chat_support position="bottom-left"]` und das Widget können
+die Buttonposition pro Einbindung überschreiben (`bottom-right`, `bottom-left`,
+`top-right`, `top-left`).
 Der Posteingang liegt unter **Support → Supportchats**, nicht in einem eigenen
 Hauptmenü. Die Konfiguration ist auch bei inaktivem PS Chat sichtbar;
 für den Chatbetrieb muss PS Chat auf der jeweiligen Site aktiv sein.
@@ -88,6 +92,19 @@ jedes Teammitglied per E-Mail. Der Link erfordert eine reguläre Anmeldung;
 erst „Chat übernehmen“ weist die Sitzung exklusiv einem Mitarbeiter zu.
 Andere Besucher sehen keine Inhalte. Der Besucher-Hinweis ist standardmäßig
 leer und kann vom Administrator selbst verfasst werden.
+
+### Support-Bot
+
+Der Support-Bot ist ein frei konfigurierbarer Hilfeflow vor einem Ticketformular
+oder im privaten Supportchat. Betreiber definieren eigene Themen und bauen diese
+aus neutralen Schritten zusammen: Hinweise, Auswahl- und Ja/Nein-Fragen,
+Freitext-Eingaben, Links, Abschlüsse sowie die Übergabe an den Support. Jede
+Antwort kann zu einem anderen Schritt verzweigen. Bei einer Übergabe werden das
+Thema und alle Antworten als bearbeitbare Zusammenfassung in Chat oder Ticket
+übernommen; eine Ticket-Kategorie kann pro Thema vorausgewählt werden.
+
+Bestehende Themen mit einer einzelnen Antwort bleiben kompatibel und werden als
+einfacher Hinweis-Schritt weiter ausgeführt.
 
 Das Standardteam für Anfragen ohne Kategorie-Zuständigkeit wird aus den
 vorhandenen Support-Mitarbeiter-Rollen, Administratoren und ausdrücklich
@@ -183,23 +200,22 @@ wp --skip-plugins --skip-themes eval-file wp-content/plugins/ps-support/tests/ca
 
 ## Support-Bot
 
-Unter **Support → Einstellungen → Support-Bot** gibt es einfache Themenkarten:
-Name und Begrüßung festlegen, pro Thema Frage/Titel, Klartext-Antwort und optional
-eine Kategorie wählen. Über **Thema hinzufügen/entfernen** werden maximal 50
-Themen gepflegt; kein JSON und kein Ablaufeditor sind erforderlich. Aktivierung
-für **Supportchat** (benötigt PS Chat) und **Ticketformulare** erfolgt getrennt;
-beides ist standardmäßig ausgeschaltet. Bestehende Antwort-Templates bleiben
-unverändert.
+Unter **Support → Einstellungen → Support-Bot** werden bis zu 50 Themen als
+konfigurierbare Hilfeflows gepflegt. Ein Flow besteht aus Hinweisen,
+Auswahl- oder Ja/Nein-Fragen, Freitext-Eingaben, Links, Abschlüssen und einer
+optional anschließenden Support-Übergabe. Jede Auswahl kann zu einem anderen
+Schritt verzweigen. Die Aktivierung für **Supportchat** (benötigt PS Chat) und
+**Ticketformulare** erfolgt getrennt; beides ist standardmäßig ausgeschaltet.
+Bestehende Antwort-Templates bleiben unverändert.
 
-Besucher wählen ein Thema, lesen die Antwort und wählen **Gelöst**, **Neu starten**
-oder **Support kontaktieren / Ticket vorbereiten**. Das bisherige Formular ist
-immer erreichbar, auch per **Direkt zum Ticketformular**, ohne JavaScript oder
-bei deaktiviertem Bot. Erst eine ausdrückliche Übergabe ergänzt Titel,
-Kategorie und ein bearbeitbares Bot-Protokoll im Frontend- bzw. Admin-Ticketformular.
-Vorhandene Nachrichten und eigene Titel bleiben erhalten. Es erfolgen weder
-automatische Übermittlung noch Ticketanlage oder E-Mail; Login, Berechtigungen
-und bestehende Formular-Nonces bleiben unverändert. Anschließend muss der Benutzer
-das Ticket selbst absenden.
+Besucher wählen ein Thema und folgen dem konfigurierten Hilfeflow. Das bisherige
+Formular bleibt immer erreichbar, auch per **Direkt zum Ticketformular**, ohne
+JavaScript oder bei deaktiviertem Bot. Erst eine ausdrückliche Übergabe ergänzt
+Thema, Kategorie und ein bearbeitbares Protokoll aller Flow-Antworten im
+Frontend- bzw. Admin-Ticketformular. Vorhandene Nachrichten und eigene Titel
+bleiben erhalten. Es erfolgen weder automatische Übermittlung noch Ticketanlage
+oder E-Mail; Login, Berechtigungen und bestehende Formular-Nonces bleiben
+unverändert. Anschließend muss der Benutzer das Ticket selbst absenden.
 
 Ungültige bzw. unvollständige Themen werden nicht gespeichert. Fehler erscheinen
 direkt über dem Formular; die Eingaben bleiben erhalten, auch bei Server- oder
@@ -212,7 +228,8 @@ für denselben Administrator einmalig wieder angezeigt (Entwurf maximal 10 Minut
 $bot = PSource_Support_Bot::config( $scope = 0 );
 // Exakte öffentliche Schlüssel:
 // enabled_chat (bool), enabled_tickets (bool), name (string), greeting (string),
-// topics: array of {id: string, title: string, answer: string, category_id: int}
+// topics: array of {id: string, title: string, answer: string, category_id: int,
+//   steps: array of flow steps}
 ```
 
 `0` bezeichnet den zentralen Support: Multisite verwendet die Netzwerkoption

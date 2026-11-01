@@ -117,6 +117,13 @@ Ja. Wenn passende SmartCRM-Tabellen vorhanden sind, kann die Bearbeiterliste aus
 
 == Changelog ==
 
+= 1.0.3 =
+* Supportchat: Beim Laden geschlossene Chatmaske fuer schwebende und per Shortcode oder Widget eingebettete Chats; das Minimieren erfolgt ueber ein zugaengliches X-Icon.
+* Supportchat: Position des schwebenden Chatbuttons in den Einstellungen konfigurierbar (oben/unten, links/rechts); Shortcode und Widget koennen die Position pro Einbindung ueberschreiben.
+* Support-Bot: Themen zu frei konfigurierbaren Hilfeflows ausgebaut, mit Hinweisen, Auswahl- und Ja/Nein-Fragen, Freitext-Eingaben, Links, Abschluessen und Support-Uebergabe.
+* Support-Bot: Antworten und Eingaben aus einem Hilfeflow werden bei der Uebergabe als bearbeitbare Zusammenfassung in Supportchat oder Ticket uebernommen; die themenspezifische Kategorie wird vorausgewaehlt.
+* Support-Bot: Neuer Admin-Editor fuer Schritte, Optionen und Verzweigungen; bisherige Themenkarten bleiben als einzelne Hinweis-Schritte kompatibel.
+
 = 1.0.2 =
 * Bedienung: Einheitliche Autovervollstaendigung mit Hinzufuegen/Entfernen fuer Kategorie-Teams und Supportchat-Standardteam statt Mehrfach- und Checkboxlisten; nur ausgewaehlte Personen sichtbar
 * PHP: Veralteten (boolean)-Cast durch (bool) ersetzt, um Deprecation-Meldungen bei AJAX-Aufrufen zu vermeiden

@@ -78,6 +78,7 @@ class PSource_Support_Chat_Settings {
 		return wp_parse_args( is_array( $value ) ? $value : array(), array(
 			'mode' => 'disabled', 'allow_subsite_chat' => false,
 			'placement' => 'floating', 'label' => __( 'Support', 'psource-support' ),
+			'button_position' => 'bottom-right',
 			'intro_text' => '', 'require_name' => false, 'require_email' => false,
 			'session_hours' => 168, 'retention_days' => 30, 'fallback_users' => array(),
 		) );
@@ -231,8 +232,9 @@ class PSource_Support_Chat_Settings {
 		if ( ! is_string( $intro ) || strlen( $intro ) > 8000 || ( function_exists( 'mb_strlen' ) ? mb_strlen( $intro ) : strlen( $intro ) ) > 2000 ) {
 			return $error( __( 'Der Besucher-Hinweis darf maximal 2000 Zeichen enthalten.', 'psource-support' ) );
 		}
-		if ( ! isset( $input['mode'], $input['placement'], $input['label'], $input['session_hours'], $input['retention_days'], $input['fallback_users'] )
+		if ( ! isset( $input['mode'], $input['placement'], $input['button_position'], $input['label'], $input['session_hours'], $input['retention_days'], $input['fallback_users'] )
 			|| ! in_array( $input['mode'], $modes, true ) || ! in_array( $input['placement'], array( 'floating', 'embedded' ), true )
+			|| ! in_array( $input['button_position'], array( 'bottom-right', 'bottom-left', 'top-right', 'top-left' ), true )
 			|| ! is_string( $input['label'] ) || ! trim( sanitize_text_field( $input['label'] ) ) || strlen( $input['label'] ) > 100
 			|| ! is_scalar( $input['session_hours'] ) || ! ctype_digit( (string) $input['session_hours'] )
 			|| ! is_scalar( $input['retention_days'] ) || ! ctype_digit( (string) $input['retention_days'] )
@@ -262,6 +264,7 @@ class PSource_Support_Chat_Settings {
 		return array(
 			'mode' => $input['mode'], 'allow_subsite_chat' => $network && ! empty( $input['allow_subsite_chat'] ),
 			'placement' => $input['placement'], 'label' => sanitize_text_field( $input['label'] ),
+			'button_position' => $input['button_position'],
 			'intro_text' => sanitize_textarea_field( $intro ),
 			'require_name' => ! empty( $input['require_name'] ), 'require_email' => ! empty( $input['require_email'] ),
 			'session_hours' => $hours, 'retention_days' => $days, 'fallback_users' => $ids,

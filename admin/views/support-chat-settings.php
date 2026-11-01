@@ -58,6 +58,15 @@
 				</select>
 				<p class="description"><?php esc_html_e( 'Shortcode: [ps_chat_support] oder Widget „PS Chat: Privater Support“. Pro Seite wird nur eine Instanz angezeigt; ein eingebetteter Chat ersetzt dort das schwebende Icon. Ausschließlich private Support-Unterhaltungen.', 'psource-support' ); ?></p>
 			</td></tr>
+			<tr><th><label for="ps-support-button-position"><?php esc_html_e( 'Position des Chatbuttons', 'psource-support' ); ?></label></th><td>
+				<select id="ps-support-button-position" name="support[button_position]">
+					<option value="bottom-right" <?php selected( $settings['button_position'], 'bottom-right' ); ?>><?php esc_html_e( 'Unten rechts', 'psource-support' ); ?></option>
+					<option value="bottom-left" <?php selected( $settings['button_position'], 'bottom-left' ); ?>><?php esc_html_e( 'Unten links', 'psource-support' ); ?></option>
+					<option value="top-right" <?php selected( $settings['button_position'], 'top-right' ); ?>><?php esc_html_e( 'Oben rechts', 'psource-support' ); ?></option>
+					<option value="top-left" <?php selected( $settings['button_position'], 'top-left' ); ?>><?php esc_html_e( 'Oben links', 'psource-support' ); ?></option>
+				</select>
+				<p class="description"><?php esc_html_e( 'Gilt für das schwebende Icon. Shortcode und Widget können die Auswahl mit position="bottom-right", "bottom-left", "top-right" oder "top-left" überschreiben.', 'psource-support' ); ?></p>
+			</td></tr>
 			<tr><th><label for="ps-support-label"><?php esc_html_e( 'Chatname', 'psource-support' ); ?></label></th><td>
 				<input id="ps-support-label" name="support[label]" value="<?php echo esc_attr( $settings['label'] ); ?>" maxlength="100" required>
 			</td></tr>

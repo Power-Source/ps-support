@@ -75,6 +75,44 @@ function ticket(admin, richEditor) {
 	dom.window.close();
 }
 
+function flowTicket() {
+	const flow = {
+		enabled_tickets: true, name: 'Helper', greeting: 'Hello',
+		topics: [{
+			id: 'flow', title: 'Find a solution', category_id: 7,
+			steps: [
+				{ id: 'start', type: 'choice', text: 'Which option?', options: [{ label: 'Continue', next_step: 'details' }] },
+				{ id: 'details', type: 'input', label: 'Describe it', next_step: 'handoff' },
+				{ id: 'handoff', type: 'handoff' }
+			]
+		}]
+	};
+	const dom = new JSDOM(`<form>
+		<section class="ps-support-bot" data-solved="Solved" data-handoff="Prepared">
+			<div class="ps-bot-topics"></div><div class="ps-bot-answer"></div>
+			<button type="button" data-bot-action="solved">Solved</button>
+			<button type="button" data-bot-action="handoff">Handoff</button><button type="button" data-bot-action="reset">Reset</button>
+			<button type="button" data-bot-action="skip">Skip</button><p class="ps-bot-status"></p>
+		</section>
+		<input name="support-system-ticket-subject"><select name="support-system-ticket-category"><option value="0">Default</option><option value="7">Flow</option></select>
+		<textarea id="support-system-ticket-message" name="support-system-ticket-message"></textarea>
+	</form>`, { runScripts: 'outside-only' });
+	const { window } = dom;
+	const root = window.document.querySelector('.ps-support-bot');
+	root.dataset.config = JSON.stringify(flow);
+	window.eval(script('assets/js/support-bot.js'));
+	root.querySelector('.ps-bot-topics button').click();
+	check(root.querySelector('.ps-bot-answer').textContent.includes('Which option?'), 'Flow displays its choice question');
+	root.querySelector('.ps-bot-answer button').click();
+	const input = root.querySelector('.ps-bot-answer textarea');
+	input.value = 'My detailed problem';
+	root.querySelector('.ps-bot-answer button').click();
+	check(window.document.querySelector('[name="support-system-ticket-subject"]').value === 'Find a solution', 'Flow handoff sets the topic as ticket subject');
+	check(window.document.querySelector('[name="support-system-ticket-message"]').value.includes('My detailed problem'), 'Flow handoff includes structured free-text input');
+	check(window.document.querySelector('[name="support-system-ticket-category"]').value === '7', 'Flow handoff applies its configured category');
+	dom.window.close();
+}
+
 async function settings() {
 	const dom = new JSDOM(`<div><div class="ps-bot-feedback" hidden><p></p></div>
 	<form class="ps-bot-settings-form" data-empty="Add a topic" data-error="Keep draft" data-ajax-url="/save">
@@ -118,6 +156,7 @@ async function settings() {
 	ticket(false, false);
 	ticket(true, false);
 	ticket(true, true);
+	flowTicket();
 	await settings();
 	console.log(`Support bot UI: ${assertions} assertions passed.`);
 })().catch((error) => { console.error(error); process.exitCode = 1; });
